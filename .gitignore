@@ -61,6 +61,4 @@ build/
 .dart_tool/
 android/.gradle/
 
-# Firebase and secrets (optional)
-google-services.json
-GoogleService-Info.plist
+
