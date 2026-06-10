@@ -50,3 +50,17 @@ app.*.map.json
 *.jks
 *.keystore
 android/key.properties
+
+# Build outputs
+android/build/
+build/
+*.apk
+*.aab
+
+# Generated files
+.dart_tool/
+android/.gradle/
+
+# Firebase and secrets (optional)
+google-services.json
+GoogleService-Info.plist
