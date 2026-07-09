@@ -56,22 +56,22 @@ class DefaultFirebaseOptions {
     projectId: 'edumate-college',
     storageBucket: 'edumate-college.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyBcSpHovH_gOxqJ_5FXzZYpLLO6EcfvBKo',
     appId: '1:530402102237:ios:2e7d24310ae8fa29a10434',
     messagingSenderId: '530402102237',
     projectId: 'edumate-college',
     storageBucket: 'edumate-college.firebasestorage.app',
+    iosClientId: '530402102237-j97park63bs1q0u9l0rp1jlrsb5ups4b.apps.googleusercontent.com',
     iosBundleId: 'com.example.edumate',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyBcSpHovH_gOxqJ_5FXzZYpLLO6EcfvBKo',
     appId: '1:530402102237:ios:2e7d24310ae8fa29a10434',
     messagingSenderId: '530402102237',
     projectId: 'edumate-college',
     storageBucket: 'edumate-college.firebasestorage.app',
+    iosClientId: '530402102237-j97park63bs1q0u9l0rp1jlrsb5ups4b.apps.googleusercontent.com',
     iosBundleId: 'com.example.edumate',
   );
 
