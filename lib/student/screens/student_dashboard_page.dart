@@ -3,9 +3,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'receipts_page.dart';
-
-import 'student_profile_page.dart';
 
 import '../../common/widgets/app_drawer.dart';
 import '../../main.dart';
@@ -77,6 +74,8 @@ class StudentDashboardPage extends StatelessWidget {
             as Map<
                 String,
                 dynamic>;
+
+            final studentName = data["name"].toString();
 
             final photoUrl =
 
@@ -276,16 +275,9 @@ class StudentDashboardPage extends StatelessWidget {
 
                           Text(
 
-                            data["name"]
-
-                                .toString()
-
-                                .substring(
-                              0,
-                              2,
-                            )
-
-                                .toUpperCase(),
+                            studentName.length >= 2
+                                ? studentName.substring(0, 2).toUpperCase()
+                                : studentName.toUpperCase(),
 
                             style:
 
@@ -356,7 +348,7 @@ class StudentDashboardPage extends StatelessWidget {
 
                                     "${data["department"]} • "
 
-                                    "Sec ${user["section"] ?? "-"}",
+                "Sec ${user["section"]?.toString() ?? "-"}",
 
                                 style:
 
@@ -533,7 +525,7 @@ class StudentDashboardPage extends StatelessWidget {
                           title:
                           "Attendance",
                           value:
-                          "${data["attendance"]}%",
+                          "${user["attendance"] ?? 0}%",
                           color:
                           Colors.green,
                         ),
@@ -549,8 +541,7 @@ class StudentDashboardPage extends StatelessWidget {
                           title:
                           "CGPA",
                           value:
-                          data["cgpa"]
-                              .toString(),
+                          (user["cgpa"] ?? "-").toString(),
                           color:
                           Colors.blue,
                         ),
@@ -572,8 +563,7 @@ class StudentDashboardPage extends StatelessWidget {
                           title:
                           "Semester",
                           value:
-                          data["semester"]
-                              .toString(),
+                          (user["semester"] ?? "-").toString(),
                           color:
                           Colors.orange,
                         ),
@@ -590,7 +580,7 @@ class StudentDashboardPage extends StatelessWidget {
                           "Fees",
                           value:
 
-                          "₹${data["feesDue"]}",
+                          "₹${user["feesDue"] ?? 0}",
                           color:
                           Colors.purple,
                         ),
@@ -712,11 +702,8 @@ class StudentDashboardPage extends StatelessWidget {
 
                           Text(
 
-                            data.data()
-                                .toString()
-                                .contains(
-                                "photoUrl"
-                            )
+                            user.containsKey("photoUrl") &&
+                photoUrl.toString().isNotEmpty
 
                                 &&
 
@@ -872,7 +859,7 @@ class StudentDashboardPage extends StatelessWidget {
 
               decoration: BoxDecoration(
                 color:
-                color.withOpacity(0.15),
+                color.withValues(alpha: 0.15),
 
                 borderRadius:
                 BorderRadius.circular(
@@ -929,7 +916,7 @@ class StudentDashboardPage extends StatelessWidget {
 
       decoration: BoxDecoration(
         color:
-        color.withOpacity(0.15),
+        color.withValues(alpha: 0.15),
 
         borderRadius:
         BorderRadius.circular(24),

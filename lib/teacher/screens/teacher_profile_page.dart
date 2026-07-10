@@ -19,6 +19,7 @@ class TeacherProfilePage
   });
 
   @override
+
   State<TeacherProfilePage>
   createState() =>
       _TeacherProfilePageState();
@@ -40,6 +41,15 @@ class _TeacherProfilePageState
   TextEditingController();
 
   File? profileImage;
+
+  @override
+  void dispose() {
+    phoneController.dispose();
+    qualificationController.dispose();
+    experienceController.dispose();
+    bioController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +187,7 @@ class _TeacherProfilePageState
                         final data =
 
                         snapshot.data!;
+                        final name = data["name"].toString();
 
                         return Column(
 
@@ -191,20 +202,8 @@ class _TeacherProfilePageState
 
                               backgroundImage:
 
-                              data.data()
-                                  .toString()
-                                  .contains(
-                                  "photoUrl"
-                              )
-
-                                  &&
-
-                                  data["photoUrl"] != null
-
-                                  &&
-
-                                  data["photoUrl"] != ""
-
+                              data["photoUrl"] != null &&
+                                  data["photoUrl"].toString().isNotEmpty
                                   ?
 
                               NetworkImage(
@@ -213,37 +212,23 @@ class _TeacherProfilePageState
 
                                   : null,
 
-                              child:
-
-                              data["photoUrl"] == null
-
-                                  ||
-
-                                  data["photoUrl"] == ""
-
+                              child: data["photoUrl"] == null ||
+                                  data["photoUrl"].toString().isEmpty
                                   ?
 
                               Text(
-
-                                data["name"]
-
-                                    .substring(
-                                  0,
-                                  2,
-                                )
-
+                                (name.length >= 2
+                                    ? name.substring(0, 2)
+                                    : name)
                                     .toUpperCase(),
-
-                                style:
-
-                                const TextStyle(
-
-                                  fontSize:28,
-
-                                  color:
-                                  Colors.white,
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  color: Colors.white,
                                 ),
                               )
+
+
+
 
                                   : null,
                             ),
@@ -317,21 +302,9 @@ class _TeacherProfilePageState
                               children:[
 
                                 badge(
-
-                                  data.data()
-                                      .toString()
-                                      .contains(
-                                      "experience"
-                                  )
-
-                                      ?
-
-                                  "${data["experience"]} Years Exp"
-
-                                      :
-
-                                  "0 Years Exp",
-
+                                  (data["experience"]?.toString().isNotEmpty ?? false)
+                                      ? "${data["experience"]} Years Exp"
+                                      : "0 Years Exp",
                                   Colors.orange,
                                 ),
 
@@ -412,24 +385,26 @@ class _TeacherProfilePageState
                 child:
                 ElevatedButton.icon(
 
-                  onPressed: () {
+                  onPressed: () async {
 
-                    final teacher =
+                    final teacherDoc = await FirebaseFirestore.instance
+                        .collection("teachers")
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .get();
 
-                    FirebaseFirestore
-                        .instance
+                    final teacher = teacherDoc.data()!;
 
-                        .collection(
-                      "teachers",
-                    )
+                    phoneController.text =
+                        teacher["phone"]?.toString() ?? "";
 
-                        .doc(
+                    qualificationController.text =
+                        teacher["qualification"]?.toString() ?? "";
 
-                      FirebaseAuth
-                          .instance
-                          .currentUser!
-                          .uid,
-                    );
+                    experienceController.text =
+                        teacher["experience"]?.toString() ?? "";
+
+                    bioController.text =
+                        teacher["bio"]?.toString() ?? "";
 
                     showDialog(
 
@@ -888,11 +863,54 @@ class _TeacherProfilePageState
                                             ),
                                           ),
 
-                                          onPressed:
-                                              () async {
+                                          onPressed: () async {
+                                            try {
+                                              String imageUrl = "";
 
-/* KEEP YOUR CURRENT SAVE LOGIC HERE */
+                                              if (profileImage != null) {
+                                                final ref = FirebaseStorage.instance
+                                                    .ref()
+                                                    .child(
+                                                  "teacher_profiles/${FirebaseAuth.instance.currentUser!.uid}",
+                                                );
 
+                                                await ref.putFile(profileImage!);
+
+                                                imageUrl = await ref.getDownloadURL();
+                                              }
+
+                                              final Map<String, dynamic> updateData = {
+                                                "phone": phoneController.text,
+                                                "qualification": qualificationController.text,
+                                                "experience": experienceController.text,
+                                                "bio": bioController.text,
+                                              };
+
+                                              if (imageUrl.isNotEmpty) {
+                                                updateData["photoUrl"] = imageUrl;
+                                              }
+
+                                              await FirebaseFirestore.instance
+                                                  .collection("teachers")
+                                                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                                                  .update(updateData);
+
+                                              if (mounted) {
+                                                Navigator.pop(context);
+
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text("Profile Updated Successfully"),
+                                                  ),
+                                                );
+                                              }
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(e.toString()),
+                                                ),
+                                              );
+                                            }
                                           },
 
                                           child:
@@ -955,17 +973,14 @@ class _TeacherProfilePageState
                     ),
                   ),
 
-                  onPressed: () {
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
 
                     Navigator.pushAndRemoveUntil(
-
                       context,
-
                       MaterialPageRoute(
-                        builder: (_) =>
-                        const RoleSelectionPage(),
+                        builder: (_) => const RoleSelectionPage(),
                       ),
-
                           (route) => false,
                     );
                   },

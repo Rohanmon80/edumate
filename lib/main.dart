@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'splash_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
 
@@ -12,6 +13,10 @@ void main() async {
     options:
     DefaultFirebaseOptions
         .currentPlatform,
+  );
+  await Supabase.initialize(
+    url: 'https://entxhlyjvgjhwmuvmtkf.supabase.co',
+    anonKey: 'sb_publishable__rUfzg9o2V1eTZJJa1C9yA_DemVEaK6',
   );
 
   runApp(

@@ -116,9 +116,8 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                           backgroundColor: Colors.blue,
 
                           backgroundImage:
-                              data.data().toString().contains("photoUrl") &&
-                                  data["photoUrl"] != null &&
-                                  data["photoUrl"] != ""
+                          data["photoUrl"] != null &&
+                              data["photoUrl"].toString().isNotEmpty
                               ? NetworkImage(data["photoUrl"])
                               : null,
 
@@ -190,7 +189,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         child: statCard(
                           isDark,
                           "CGPA",
-                          data["cgpa"].toString(),
+                          (data["cgpa"] ?? "-").toString(),
                         ),
                       ),
 
@@ -200,7 +199,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         child: statCard(
                           isDark,
                           "Attend.",
-                          "${data["attendance"]}%",
+                          "${data["attendance"]  ?? 0}%",
                         ),
                       ),
 
@@ -210,7 +209,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         child: statCard(
                           isDark,
                           "Semester",
-                          data["semester"].toString(),
+                          (data["semester"] ?? "-").toString(),
                         ),
                       ),
                     ],

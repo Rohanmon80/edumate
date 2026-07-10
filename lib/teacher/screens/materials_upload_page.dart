@@ -38,6 +38,11 @@ class _TeacherMaterialUploadPageState
   String fileType="FILE";
 
   String fileSize="";
+  @override
+  void dispose() {
+    titleController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -83,8 +88,16 @@ class _TeacherMaterialUploadPageState
 
                 final result=
 
-                await FilePicker.platform
-                    .pickFiles();
+                await FilePicker.platform.pickFiles(
+                  type: FileType.custom,
+                  allowedExtensions: [
+                    'pdf',
+                    'ppt',
+                    'pptx',
+                    'doc',
+                    'docx',
+                  ],
+                );
 
                 if(result!=null){
 
@@ -255,10 +268,21 @@ class _TeacherMaterialUploadPageState
 
                 onPressed: () async {
 
-                  if(
-                  selectedFile==null
-                  ){
+                  if (titleController.text.trim().isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter material title"),
+                      ),
+                    );
+                    return;
+                  }
 
+                  if (selectedFile == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please select a file"),
+                      ),
+                    );
                     return;
                   }
 
@@ -279,75 +303,58 @@ class _TeacherMaterialUploadPageState
 
                   );
 
-                  await ref.putFile(
-                    selectedFile!,
-                  );
+                  try {
+                    await ref.putFile(selectedFile!);
+                    String url = await ref.getDownloadURL();
+                    await FirebaseFirestore.instance
+                        .collection("study_materials")
+                        .add({
 
-                  String url=
+                      "title": titleController.text,
 
-                  await ref
-                      .getDownloadURL();
+                      "teacher": "Teacher",
 
-                  await FirebaseFirestore
-                      .instance
+                      "fileUrl": url,
 
-                      .collection(
-                      "study_materials")
+                      "fileType": fileType,
 
-                      .add({
+                      "fileSize": fileSize,
 
-                    "title":
+                      "year": selectedYear,
 
-                    titleController.text,
+                      "department": selectedDepartment,
 
-                    "teacher":
+                      "section": selectedSection,
 
-                    "Teacher",
+                      "uploadedAt": Timestamp.now(),
+                    });
 
-                    "fileUrl":
-                    url,
+                    titleController.clear();
 
-                    "fileType":
-                    fileType,
+                    selectedFile = null;
 
-                    "fileSize":
-                    fileSize,
+                    setState(() {});
 
-                    "year":
-                    selectedYear
-                        .substring(0,1),
-
-                    "department":
-                    selectedDepartment,
-
-                    "section":
-                    selectedSection,
-
-                    "uploadedAt":
-
-                    Timestamp.now(),
-                  });
-
-                  if(
-                  mounted
-                  ){
-
-                    ScaffoldMessenger.of(
-                        context)
-
-                        .showSnackBar(
-
-                      const SnackBar(
-
-                        content:
-
-                        Text(
-
-                          "Material Uploaded Successfully",
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            "Material Uploaded Successfully",
+                          ),
                         ),
+                      );
+                    }
+
+                  } catch (e) {
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString()),
                       ),
                     );
-                  }
+                  };
+
+
                 },
 
                 child: const Text(

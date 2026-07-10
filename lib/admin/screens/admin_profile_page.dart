@@ -41,6 +41,15 @@ class _AdminProfilePageState
   File? profileImage;
 
   @override
+  void dispose() {
+    phoneController.dispose();
+    designationController.dispose();
+    officeController.dispose();
+    bioController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(
       BuildContext context) {
 
@@ -257,12 +266,9 @@ class _AdminProfilePageState
 
                               )
 
-                                  .substring(
-                                0,
-                                2,
-                              )
-
-                                  .toUpperCase(),
+                                  .toString().length >= 2
+                                  ? profile["name"].toString().substring(0, 2).toUpperCase()
+                                  : profile["name"].toString().toUpperCase(),
 
                               style:
                               const TextStyle(
@@ -313,29 +319,15 @@ class _AdminProfilePageState
                           6,
                         ),
 
-                    Text(
-
-                      profile.data()
-                          .toString()
-                          .contains(
-                          "name"
-                      )
-
-                          ? profile["name"]
-
-                          : "Admin",
-
-                      style:
-                      TextStyle(
-
-                        fontSize: 16,
-
-                        color:
-                        isDark
-                            ? Colors.white70
-                            : Colors.black54,
-                      ),
-                    ),
+                        Text(
+                          profile["designation"]?.toString() ?? "Administrator",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isDark
+                                ? Colors.white70
+                                : Colors.black54,
+                          ),
+                        ),
 
 
                       ],
@@ -532,6 +524,17 @@ class _AdminProfilePageState
                 ElevatedButton.icon(
 
                   onPressed: () {
+                    phoneController.text =
+                        profile["phone"]?.toString() ?? "";
+
+                    designationController.text =
+                        profile["designation"]?.toString() ?? "";
+
+                    officeController.text =
+                        profile["office"]?.toString() ?? "";
+
+                    bioController.text =
+                        profile["bio"]?.toString() ?? "";
 
                     showDialog(
 
@@ -874,47 +877,35 @@ class _AdminProfilePageState
                                               await ref
                                                   .getDownloadURL();
                                             }
+                                            try {
+                                              await FirebaseFirestore.instance
+                                                  .collection("admins")
+                                                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                                                  .update({
+                                                if (imageUrl.isNotEmpty) "photoUrl": imageUrl,
+                                                "phone": phoneController.text,
+                                                "designation": designationController.text,
+                                                "office": officeController.text,
+                                                "bio": bioController.text,
+                                              });
 
-                                            await FirebaseFirestore
-                                                .instance
+                                              Navigator.pop(context);
 
-                                                .collection(
-                                              "admins",
-                                            )
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text("Profile Updated Successfully"),
+                                                ),
+                                              );
+                                            } catch (e) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(e.toString()),
+                                                ),
+                                              );
+                                            }
 
-                                                .doc(
 
-                                              FirebaseAuth
-                                                  .instance
-                                                  .currentUser!
-                                                  .uid,
-                                            )
 
-                                                .update({
-
-                                              if(
-                                              imageUrl != ""
-                                              )
-
-                                                "photoUrl":
-                                                imageUrl,
-
-                                              "phone":
-                                              phoneController.text,
-
-                                              "designation":
-                                              designationController.text,
-
-                                              "office":
-                                              officeController.text,
-
-                                              "bio":
-                                              bioController.text,
-                                            });
-
-                                            Navigator.pop(
-                                              context,
-                                            );
                                           },
 
                                           child:
@@ -969,17 +960,14 @@ class _AdminProfilePageState
                     ),
                   ),
 
-                  onPressed: () {
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
 
                     Navigator.pushAndRemoveUntil(
-
                       context,
-
                       MaterialPageRoute(
-                        builder: (_) =>
-                        const RoleSelectionPage(),
+                        builder: (_) => const RoleSelectionPage(),
                       ),
-
                           (route) => false,
                     );
                   },
