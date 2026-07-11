@@ -238,45 +238,43 @@ class TeacherDashboardPage extends StatelessWidget {
                             .data!
                             .exists) {
 
-                      return const Text(
-                        "Loading...",
+                      return const Center(
+                        child: CircularProgressIndicator(),
                       );
                     }
 
-                    final data =
-                    snapshot
-                        .data!;
+                    final data = snapshot.data!;
+                    final teacher = data.data() as Map<String, dynamic>;
 
                     return Row(
 
                       children: [
 
-                        CircleAvatar(
 
-                          radius: 40,
 
-                          backgroundColor:
-                          Colors.blue,
-
-                          child: Text(
-
-                            data["name"]
-
-                                .substring(
-                              0,
-                              2,
-                            )
-
-                                .toUpperCase(),
-
-                            style:
-                            const TextStyle(
-
-                              color:
-                              Colors.white,
-                            ),
-                          ),
+                    CircleAvatar(
+                      radius: 40,
+                      backgroundColor: Colors.blue,
+                      backgroundImage:
+                      teacher.containsKey("photoUrl") &&
+                          teacher["photoUrl"] != null &&
+                          teacher["photoUrl"] != ""
+                          ? NetworkImage(teacher["photoUrl"])
+                          : null,
+                      child:
+                      !teacher.containsKey("photoUrl") ||
+                          teacher["photoUrl"] == null ||
+                          teacher["photoUrl"] == ""
+                          ? Text(
+                        teacher["name"]
+                            .substring(0, 2)
+                            .toUpperCase(),
+                        style: const TextStyle(
+                          color: Colors.white,
                         ),
+                      )
+                          : null,
+                    ),
 
                         const SizedBox(
                           width: 18,
@@ -314,12 +312,11 @@ class TeacherDashboardPage extends StatelessWidget {
                               ),
 
                               Text(
-                                data[
-                                "department"],
+                                data["designation"] ?? "Teacher",
                               ),
 
-                              const Text(
-                                "Teacher",
+                              Text(
+                                "${data["department"]} Department",
                               ),
                             ],
                           ),

@@ -34,6 +34,9 @@ class _TeacherProfilePageState
   final qualificationController =
   TextEditingController();
 
+  final designationController =
+  TextEditingController();
+
   final experienceController =
   TextEditingController();
 
@@ -46,6 +49,7 @@ class _TeacherProfilePageState
   void dispose() {
     phoneController.dispose();
     qualificationController.dispose();
+    designationController.dispose();
     experienceController.dispose();
     bioController.dispose();
     super.dispose();
@@ -303,8 +307,8 @@ class _TeacherProfilePageState
 
                                 badge(
                                   (data["experience"]?.toString().isNotEmpty ?? false)
-                                      ? "${data["experience"]} Years Exp"
-                                      : "0 Years Exp",
+                                      ? data["experience"].toString()
+                                      : "No Experience",
                                   Colors.orange,
                                 ),
 
@@ -399,6 +403,9 @@ class _TeacherProfilePageState
 
                     qualificationController.text =
                         teacher["qualification"]?.toString() ?? "";
+
+                    designationController.text =
+                        teacher["designation"]?.toString() ?? "";
 
                     experienceController.text =
                         teacher["experience"]?.toString() ?? "";
@@ -681,6 +688,31 @@ class _TeacherProfilePageState
                                         height:14,
                                       ),
 
+                                      const SizedBox(
+                                        height: 14,
+                                      ),
+
+                                      TextField(
+
+                                        controller: designationController,
+
+                                        decoration: InputDecoration(
+
+                                          labelText: "Designation",
+
+                                          filled: true,
+
+                                          fillColor: isDark
+                                              ? Colors.white.withOpacity(0.08)
+                                              : Colors.white,
+
+                                          border: OutlineInputBorder(
+                                            borderRadius: BorderRadius.circular(18),
+                                            borderSide: BorderSide.none,
+                                          ),
+                                        ),
+                                      ),
+
                                       TextField(
 
                                         controller:
@@ -882,6 +914,7 @@ class _TeacherProfilePageState
                                               final Map<String, dynamic> updateData = {
                                                 "phone": phoneController.text,
                                                 "qualification": qualificationController.text,
+                                                "designation": designationController.text,
                                                 "experience": experienceController.text,
                                                 "bio": bioController.text,
                                               };

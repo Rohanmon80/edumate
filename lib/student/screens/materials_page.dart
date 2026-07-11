@@ -1,13 +1,8 @@
 import 'dart:ui';
 import 'package:url_launcher/url_launcher.dart';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../main.dart';
 
 class MaterialsPage extends StatelessWidget {
@@ -231,7 +226,9 @@ class MaterialsPage extends StatelessWidget {
                   !userSnap.hasData
                   ){
 
-                    return const SizedBox();
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
                   }
 
                   if(
@@ -239,7 +236,9 @@ class MaterialsPage extends StatelessWidget {
                       .exists
                   ){
 
-                    return const SizedBox();
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
                   }
 
                   final user =
@@ -338,6 +337,7 @@ class MaterialsPage extends StatelessWidget {
                                 dynamic>;
 
                             return materialCard(
+                              context,
 
                               isDark:
                               isDark,
@@ -390,7 +390,8 @@ class MaterialsPage extends StatelessWidget {
     );
   }
 
-  Widget materialCard({
+  Widget materialCard(
+      BuildContext context, {
 
     required bool isDark,
 
@@ -563,21 +564,29 @@ class MaterialsPage extends StatelessWidget {
 
                   onTap: () async {
 
-                    final uri=
+                    if (fileUrl.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("File not available"),
+                        ),
+                      );
+                      return;
+                    }
 
-                    Uri.parse(
-                      fileUrl,
-                    );
+                    final uri = Uri.parse(fileUrl);
 
-                    await launchUrl(
-
+                    final success = await launchUrl(
                       uri,
-
-                      mode:
-
-                      LaunchMode
-                          .externalApplication,
+                      mode: LaunchMode.externalApplication,
                     );
+
+                    if (!success && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Unable to open file"),
+                        ),
+                      );
+                    }
                   },
 
                   child:

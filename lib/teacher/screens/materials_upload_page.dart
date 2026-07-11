@@ -38,6 +38,7 @@ class _TeacherMaterialUploadPageState
   String fileType="FILE";
 
   String fileSize="";
+  bool isUploading = false;
   @override
   void dispose() {
     titleController.dispose();
@@ -285,6 +286,11 @@ class _TeacherMaterialUploadPageState
                     );
                     return;
                   }
+                  if (isUploading) return;
+
+                  setState(() {
+                    isUploading = true;
+                  });
 
                   final ref=
 
@@ -320,7 +326,7 @@ class _TeacherMaterialUploadPageState
 
                       "fileSize": fileSize,
 
-                      "year": selectedYear,
+                      "year": int.parse(selectedYear.substring(0, 1)),
 
                       "department": selectedDepartment,
 
@@ -332,8 +338,13 @@ class _TeacherMaterialUploadPageState
                     titleController.clear();
 
                     selectedFile = null;
+                    fileType = "FILE";
 
-                    setState(() {});
+                    fileSize = "";
+
+                    setState(() {
+                      isUploading = false;
+                    });
 
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -346,6 +357,9 @@ class _TeacherMaterialUploadPageState
                     }
 
                   } catch (e) {
+                    setState(() {
+                      isUploading = false;
+                    });
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -357,7 +371,11 @@ class _TeacherMaterialUploadPageState
 
                 },
 
-                child: const Text(
+                child: isUploading
+                    ? const CircularProgressIndicator(
+                  color: Colors.white,
+                )
+                    : const Text(
                   "Upload Material",
                 ),
               ),
