@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 class TeacherAttendancePage extends StatefulWidget {
 
   const TeacherAttendancePage({
@@ -16,17 +16,17 @@ class TeacherAttendancePage extends StatefulWidget {
 class _TeacherAttendancePageState
     extends State<TeacherAttendancePage> {
 
-  String year = "1";
+  String year = "1st";
 
   String department = "CSE";
 
   String section = "A";
 
   final years = [
-    "1",
-    "2",
-    "3",
-    "4",
+    "1st",
+    "2nd",
+    "3rd",
+    "4th",
   ];
 
   final departments = [
@@ -59,28 +59,59 @@ class _TeacherAttendancePageState
     "D",
   ];
 
-  String selectedSubject =
-      "DBMS";
+  final TextEditingController subjectController =
+  TextEditingController();
 
-  final teacherController =
-  TextEditingController(
-    text:
-    "Madam",
-  );
+
 
   final searchController =
   TextEditingController();
+  String teacherName = "";
 
-  Map<String,bool> attendance={};
+  Map<String, bool> attendance = {};
+
+  bool loadStudents = false;
+
+  bool isSaving = false;
 
   @override
-  Widget build(
-      BuildContext context){
+  void dispose() {
+    subjectController.dispose();
+    searchController.dispose();
+    super.dispose();
+  }
+  Future<void> loadTeacherName() async {
 
+    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+    final doc = await FirebaseFirestore.instance
+        .collection("teachers")
+        .doc(uid)
+        .get();
+
+    if (!mounted)
+
+      return;
+
+    if (doc.exists) {
+      setState(() {
+        teacherName = doc.data()?["name"] ?? "Teacher";
+      });
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    loadTeacherName();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark =
 
-        Theme.of(context)
-            .brightness==
+        Theme
+            .of(context)
+            .brightness ==
 
             Brightness.dark;
 
@@ -109,8 +140,7 @@ class _TeacherAttendancePageState
             Icons.arrow_back,
           ),
 
-          onPressed:(){
-
+          onPressed: () {
             Navigator.pop(
               context,
             );
@@ -122,11 +152,11 @@ class _TeacherAttendancePageState
           "Mark Attendance",
         ),
 
-        actions:[
+        actions: [
 
           IconButton(
 
-            onPressed:(){},
+            onPressed: () {},
 
             icon:
             const Icon(
@@ -148,11 +178,11 @@ class _TeacherAttendancePageState
         child:
         Column(
 
-          children:[
+          children: [
 
             Row(
 
-              children:[
+              children: [
 
                 Expanded(
 
@@ -175,11 +205,11 @@ class _TeacherAttendancePageState
 
                     years.map(
 
-                          (e)=>
+                          (e) =>
 
                           DropdownMenuItem(
 
-                            value:e,
+                            value: e,
 
                             child:
                             Text(e),
@@ -189,18 +219,17 @@ class _TeacherAttendancePageState
                         .toList(),
 
                     onChanged:
-                        (v){
-
+                        (v) {
                       setState(() {
-
-                        year=v!;
+                        year = v!;
+                        loadStudents = false;
                       });
                     },
                   ),
                 ),
 
                 const SizedBox(
-                  width:10,
+                  width: 10,
                 ),
 
                 Expanded(
@@ -224,11 +253,11 @@ class _TeacherAttendancePageState
 
                     departments.map(
 
-                          (e)=>
+                          (e) =>
 
                           DropdownMenuItem(
 
-                            value:e,
+                            value: e,
 
                             child:
                             Text(e),
@@ -238,18 +267,17 @@ class _TeacherAttendancePageState
                         .toList(),
 
                     onChanged:
-                        (v){
-
+                        (v) {
                       setState(() {
-
-                        department=v!;
+                        department = v!;
+                        loadStudents = false;
                       });
                     },
                   ),
                 ),
 
                 const SizedBox(
-                  width:10,
+                  width: 10,
                 ),
 
                 Expanded(
@@ -273,11 +301,11 @@ class _TeacherAttendancePageState
 
                     sections.map(
 
-                          (e)=>
+                          (e) =>
 
                           DropdownMenuItem(
 
-                            value:e,
+                            value: e,
 
                             child:
                             Text(e),
@@ -287,11 +315,10 @@ class _TeacherAttendancePageState
                         .toList(),
 
                     onChanged:
-                        (v){
-
+                        (v) {
                       setState(() {
-
-                        section=v!;
+                        section = v!;
+                        loadStudents = false;
                       });
                     },
                   ),
@@ -300,109 +327,49 @@ class _TeacherAttendancePageState
             ),
 
             const SizedBox(
-              height:20,
+              height: 20,
             ),
-
-            Row(
-
-              children:[
-
-                Expanded(
-
-                  child:
-                  statsBox(
-
-                    "Present",
-
-                    attendance
-                        .values
-
-                        .where(
-                            (e)=>
-
-                        e)
-
-                        .length
-
-                        .toString(),
-
-                    Colors.green,
-                  ),
-                ),
-
-                const SizedBox(
-                  width:10,
-                ),
-
-                Expanded(
-
-                  child:
-                  statsBox(
-
-                    "Absent",
-
-                    attendance
-                        .values
-
-                        .where(
-                            (e)=>
-
-                        !e)
-
-                        .length
-
-                        .toString(),
-
-                    Colors.red,
-                  ),
-                ),
-              ],
-            ),
-
-            DropdownButtonFormField(
-
-              value:
-              selectedSubject,
-
-              items:[
-
-                "DBMS",
-                "Java Programming",
-                "Operating System",
-                "Data Structures",
-
-              ].map(
-
-                    (e)=>
-
-                    DropdownMenuItem(
-
-                      value:e,
-
-                      child:
-                      Text(e),
-                    ),
-              ).toList(),
-
-              onChanged:
-                  (v){
+            SizedBox(
+            width: double.infinity,
+            height: 50,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                attendance.clear();
 
                 setState(() {
-
-                  selectedSubject=
-                  v!;
+                  loadStudents = true;
                 });
               },
+            icon: const Icon(Icons.search),
+            label: const Text("Load Class"),
+            ),
+            ),
+
+            const SizedBox(height: 20),
+
+
+            TextField(
+              controller: subjectController,
+
+              decoration: InputDecoration(
+                labelText: "Subject Name",
+                hintText: "Enter Subject (Example: DBMS)",
+
+                prefixIcon: const Icon(Icons.menu_book),
+
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+              ),
             ),
 
             const SizedBox(
-              height:20,
+              height: 20,
             ),
 
 
-
             const SizedBox(
-              height:20,
+              height: 20,
             ),
 
             TextField(
@@ -431,75 +398,100 @@ class _TeacherAttendancePageState
                 ),
               ),
 
-              onChanged:(_){
-
+              onChanged: (_) {
                 setState(() {});
               },
             ),
 
             const SizedBox(
-              height:20,
+              height: 20,
             ),
 
             Expanded(
 
-              child:
+              child: !loadStudents
 
-              StreamBuilder<
-                  QuerySnapshot>(
+                  ? const Center(
+                child: Text(
+                  "Select Year, Department, Section\nand press Load Students",
+                  textAlign: TextAlign.center,
+                ),
+              )
 
-                stream:
+                  : FutureBuilder<QuerySnapshot>(
+
+                future:
 
                 FirebaseFirestore
                     .instance
 
-                    .collection(
-                    "users")
-
-                    .where(
-                    "role",
-                    isEqualTo:
-                    "student")
-
-                    .where(
-                    "year",
-                    isEqualTo:
-                    year)
-
-                    .where(
-                    "department",
-                    isEqualTo:
-                    department)
-
-                    .where(
-                    "section",
-                    isEqualTo:
-                    section)
-
-                    .snapshots(),
+        .collection("users")
+        .where("role", isEqualTo: "student")
+        .where("year", isEqualTo: year)
+        .where("department", isEqualTo: department)
+        .where("section", isEqualTo: section)
+        .orderBy("rollNumber")
+        .get(),
 
                 builder:
-                    (
-                    context,
-                    snapshot,
-                    ){
+                    (context,
+                    snapshot,) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                      if (snapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            "Error: ${snapshot.error}",
+                          ),
+                        );
+                      }
 
-                  if(
-                  !snapshot.hasData
-                  ){
+                      if (!snapshot.hasData) {
+                        return const Center(
+                          child: Text("No data found"),
+                        );
+                      }
 
-                    return const Center(
+                      if (snapshot.data!.docs.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "No students found for selected class",
+                          ),
+                        );
+                      }
 
-                      child:
-                      CircularProgressIndicator(),
-                    );
-                  }
+    List<QueryDocumentSnapshot> students =
+    snapshot.data!.docs;
 
-                  final students =
+    students = students.where((doc) {
 
-                      snapshot
-                          .data!
-                          .docs;
+    final student =
+    doc.data() as Map<String, dynamic>;
+
+    final search =
+    searchController.text.toLowerCase();
+
+    return (student["name"] ?? "")
+        .toString()
+        .toLowerCase()
+        .contains(search) ||
+
+    (student["rollNumber"] ?? "")
+        .toString()
+        .toLowerCase()
+        .contains(search);
+
+    }).toList();
+                      if (students.isEmpty) {
+                        return const Center(
+                          child: Text(
+                            "No matching student found",
+                          ),
+                        );
+                      }
 
                   return ListView.builder(
 
@@ -507,17 +499,13 @@ class _TeacherAttendancePageState
                     students.length,
 
                     itemBuilder:
-                        (
-                        context,
-                        index,
-                        ){
-
+                        (context,
+                        index,) {
                       final student =
 
                       students[
                       index
                       ]
-
                           .data()
 
                       as Map<
@@ -535,7 +523,7 @@ class _TeacherAttendancePageState
 
                         id,
 
-                            ()=>false,
+                            () => false,
                       );
 
                       return Card(
@@ -551,13 +539,12 @@ class _TeacherAttendancePageState
 
                               student[
                               "name"
-                              ]==null
+                              ] == null
 
-                                  ?"S"
+                                  ? "S"
 
-                                  :student[
+                                  : student[
                               "name"]
-
                                   .substring(
                                 0,
                                 1,
@@ -565,25 +552,12 @@ class _TeacherAttendancePageState
                             ),
                           ),
 
-                          title:
-                          Text(
 
-                            student[
-                            "name"
-                            ] ??
 
-                                "Student",
-                          ),
-
-                          subtitle:
-                          Text(
-
-                            student[
-                            "rollNumber"
-                            ] ??
-
-                                "",
-                          ),
+                                title:
+                                Text(
+    "${student["rollNumber"]} - ${student["name"]}",
+    ),
 
                           trailing:
 
@@ -596,14 +570,10 @@ class _TeacherAttendancePageState
                                 false,
 
                             onChanged:
-                                (
-                                v
-                                ){
-
+                                (v) {
                               setState(() {
-
                                 attendance[
-                                id]=v;
+                                id] = v;
                               });
                             },
                           ),
@@ -617,26 +587,55 @@ class _TeacherAttendancePageState
 
             SizedBox(
 
-              width:
-              double.infinity,
+              width: double.infinity,
 
-              height:60,
+              height: 60,
 
-              child:
-              ElevatedButton(
+              child: ElevatedButton(
 
-                onPressed:
-                    () async {
+                onPressed: () async {
 
+                  if (isSaving) return;
+
+                  setState(() {
+                    isSaving = true;
+                  });
                   int present = 0;
 
                   int absent = 0;
+                  if (subjectController.text
+                      .trim()
+                      .isEmpty) {
+                    setState(() {
+                      isSaving = false;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter subject name"),
+                      ),
+                    );
+                    return;
+                  }
+                  if (attendance.isEmpty) {
 
-                  for(
+                    setState(() {
+                      isSaving = false;
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+
+                      const SnackBar(
+                        content: Text("Load students first"),
+                      ),
+                    );
+
+                    return;
+                  }
+
+                  for (
                   var e
                   in attendance.entries
-                  ){
-
+                  ) {
                     String uid =
                         e.key;
 
@@ -674,17 +673,15 @@ class _TeacherAttendancePageState
 
                     totalClasses++;
 
-                    if(
+                    if (
                     isPresent
-                    ){
-
+                    ) {
                       present++;
 
                       attendedClasses++;
                     }
 
-                    else{
-
+                    else {
                       absent++;
                     }
 
@@ -692,7 +689,7 @@ class _TeacherAttendancePageState
 
                     totalClasses == 0
 
-                        ?0
+                        ? 0
 
                         :
 
@@ -701,7 +698,7 @@ class _TeacherAttendancePageState
 
                         totalClasses)
 
-                        *100;
+                        * 100;
 
                     await FirebaseFirestore
                         .instance
@@ -730,40 +727,50 @@ class _TeacherAttendancePageState
 
                       "studentId":
                       uid,
+                      "studentName": data["name"],
 
                       "present":
                       isPresent,
 
                       "day":
 
-                      DateTime.now()
+                      DateTime
+                          .now()
                           .weekday,
 
                       "date":
                       Timestamp.now(),
 
                       "subject":
-                      selectedSubject,
+                      subjectController.text.trim(),
 
                       "teacher":
-
-                      teacherController
-                          .text,
+                      teacherName,
                     });
                   }
 
-                  if(
+                  if (
                   mounted
-                  ){
+                  ) {
+    attendance.clear();
 
+    subjectController.clear();
+
+    searchController.clear();
+
+    loadStudents = false;
+
+    setState(() {});
+    setState(() {
+      isSaving = false;
+    });
                     showDialog(
 
                       context:
                       context,
 
                       builder:
-                          (_){
-
+                          (_) {
                         return AlertDialog(
 
                           title:
@@ -778,12 +785,11 @@ class _TeacherAttendancePageState
                             "Present : $present\n\nAbsent : $absent",
                           ),
 
-                          actions:[
+                          actions: [
 
                             TextButton(
 
-                              onPressed:(){
-
+                              onPressed: () {
                                 Navigator.pop(
                                   context,
                                 );
@@ -801,82 +807,11 @@ class _TeacherAttendancePageState
                   }
                 },
 
-                child:
-                const Text(
-                  "Save Attendance",
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget chip(
-      String t,
-      String v){
-
-    return Expanded(
-
-      child:
-      Card(
-
-        child:
-        Padding(
-
-          padding:
-          const EdgeInsets.all(
-            12,
-          ),
-
-          child:
-          Column(
-
-            children:[
-
-              Text(t),
-
-              Text(v),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget statsBox(
-      String t,
-      String v,
-      Color c){
-
-    return Card(
-
-      child:
-      Padding(
-
-        padding:
-        const EdgeInsets.all(
-          20,
-        ),
-
-        child:
-        Column(
-
-          children:[
-
-            Text(t),
-
-            Text(
-
-              v,
-
-              style:
-              TextStyle(
-
-                color:c,
-
-                fontSize:28,
+                child: isSaving
+                    ? const CircularProgressIndicator(
+                  color: Colors.white,
+                )
+                    : const Text("Save Attendance"),
               ),
             ),
           ],

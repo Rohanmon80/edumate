@@ -291,9 +291,7 @@ class TeacherDashboardPage extends StatelessWidget {
                             children: [
 
                               Text(
-
-                                data[
-                                "name"],
+                          teacher["name"].toString(),
 
                                 style:
                                 TextStyle(
@@ -312,11 +310,13 @@ class TeacherDashboardPage extends StatelessWidget {
                               ),
 
                               Text(
-                                data["designation"] ?? "Teacher",
+                                teacher.containsKey("designation")
+                                    ? teacher["designation"].toString()
+                                    : "Teacher",
                               ),
 
                               Text(
-                                "${data["department"]} Department",
+                                "${teacher["department"]} Department",
                               ),
                             ],
                           ),
