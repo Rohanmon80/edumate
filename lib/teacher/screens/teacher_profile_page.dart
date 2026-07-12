@@ -1,1045 +1,618 @@
 import 'dart:ui';
-
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../main.dart';
 import '../../role_selection_page.dart';
 
-class TeacherProfilePage
-    extends StatefulWidget {
-
-  const TeacherProfilePage({
-    super.key,
-  });
+class TeacherProfilePage extends StatefulWidget {
+  const TeacherProfilePage({super.key});
 
   @override
-
-  State<TeacherProfilePage>
-  createState() =>
-      _TeacherProfilePageState();
+  State<TeacherProfilePage> createState() => _TeacherProfilePageState();
 }
 
-class _TeacherProfilePageState
-    extends State<TeacherProfilePage> {
+class _TeacherProfilePageState extends State<TeacherProfilePage> {
+  final emailController = TextEditingController();
 
-  final phoneController =
-  TextEditingController();
+  final phoneController = TextEditingController();
 
-  final qualificationController =
-  TextEditingController();
-
-  final designationController =
-  TextEditingController();
-
-  final experienceController =
-  TextEditingController();
-
-  final bioController =
-  TextEditingController();
+  final bioController = TextEditingController();
 
   File? profileImage;
 
   @override
   void dispose() {
+    emailController.dispose();
     phoneController.dispose();
-    qualificationController.dispose();
-    designationController.dispose();
-    experienceController.dispose();
     bioController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
-    final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-
-      backgroundColor:
-      isDark
+      backgroundColor: isDark
           ? const Color(0xFF081120)
           : const Color(0xFFF4F8FC),
 
       body: SafeArea(
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection("teachers")
+              .where(
+            "email",
+            isEqualTo: FirebaseAuth.instance.currentUser!.email,
+          )
+              .limit(1)
+              .snapshots(),
 
-        child: SingleChildScrollView(
+          builder: (context, snapshot) {
+            if (!snapshot.hasData ||
+                snapshot.data!.docs.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
 
-          padding:
-          const EdgeInsets.all(20),
+            final data = snapshot.data!.docs.first;
 
-          child: Column(
+            final user =
+            data.data() as Map<String, dynamic>;
 
-            children: [
+            String name = user["name"] ?? "";
 
-              /// TOP
-              Row(
+            final photoUrl =
+            user.containsKey("photoUrl")
+                ? user["photoUrl"] ?? ""
+                : "";
 
-                mainAxisAlignment:
-                MainAxisAlignment.spaceBetween,
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
 
+              child: Column(
                 children: [
-
-                  Text(
-                    "Profile",
-
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight:
-                      FontWeight.bold,
-
-                      color:
-                      isDark
-                          ? Colors.white
-                          : Colors.black,
-                    ),
-                  ),
-
+                  /// TOP
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                     children: [
+                      Text(
+                        "Profile",
 
-                      glassIcon(
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
 
-                        icon:
-                        isDark
-                            ? Icons.light_mode
-                            : Icons.dark_mode,
-
-                        onTap: () {
-
-                          EduMateApp.of(
-                            context,
-                          )?.toggleTheme();
-                        },
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
                       ),
 
-                      const SizedBox(width: 12),
+                      Row(
+                        children: [
+                          glassIcon(
+                            icon: isDark ? Icons.light_mode : Icons.dark_mode,
 
-                      glassIcon(
-                        icon:
-                        Icons.notifications_none,
+                            onTap: () {
+                              EduMateApp.of(context)?.toggleTheme();
+                            },
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          glassIcon(icon: Icons.notifications_none),
+                        ],
                       ),
                     ],
                   ),
-                ],
-              ),
 
-              const SizedBox(height: 25),
-
-              /// PROFILE CARD
-              /// PROFILE CARD
-              glassCard(
-
-                isDark: isDark,
-
-                child: Column(
-
-                  children: [
-
-
-
-                    StreamBuilder<DocumentSnapshot>(
-
-                      stream:
-
-                      FirebaseFirestore
-                          .instance
-
-                          .collection(
-                        "teachers",
-                      )
-
-                          .doc(
-
-                        FirebaseAuth
-                            .instance
-                            .currentUser!
-                            .uid,
-                      )
-
-                          .snapshots(),
-
-                      builder:(
-
-                          context,
-
-                          snapshot,
-                          ){
-
-                        if(
-                        !snapshot.hasData
-
-                            ||
-
-                            !snapshot.data!.exists
-                        ){
-
-                          return const Text(
-                            "Loading...",
-                          );
-                        }
-
-                        final data =
-
-                        snapshot.data!;
-                        final name = data["name"].toString();
-
-                        return Column(
-
-                          children:[
-
-                            CircleAvatar(
-
-                              radius:50,
-
-                              backgroundColor:
-                              Colors.blue,
-
-                              backgroundImage:
-
-                              data["photoUrl"] != null &&
-                                  data["photoUrl"].toString().isNotEmpty
-                                  ?
-
-                              NetworkImage(
-                                data["photoUrl"],
-                              )
-
-                                  : null,
-
-                              child: data["photoUrl"] == null ||
-                                  data["photoUrl"].toString().isEmpty
-                                  ?
-
-                              Text(
-                                (name.length >= 2
-                                    ? name.substring(0, 2)
-                                    : name)
-                                    .toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 28,
-                                  color: Colors.white,
-                                ),
-                              )
-
-
-
-
-                                  : null,
-                            ),
-
-                            const SizedBox(
-                              height:18,
-                            ),
-
-                            Text(
-
-                              data["name"],
-
-                              style:
-
-                              TextStyle(
-
-                                fontSize:28,
-
-                                fontWeight:
-                                FontWeight.bold,
-
-                                color:
-
-                                isDark
-
-                                    ?
-
-                                Colors.white
-
-                                    :
-
-                                Colors.black,
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height:6,
-                            ),
-
-                            Text(
-
-                              data["department"],
-
-                              style:
-
-                              TextStyle(
-
-                                color:
-
-                                isDark
-
-                                    ?
-
-                                Colors.white70
-
-                                    :
-
-                                Colors.black54,
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height:18,
-                            ),
-
-                            Row(
-
-                              mainAxisAlignment:
-                              MainAxisAlignment.center,
-
-                              children:[
-
-                                badge(
-                                  (data["experience"]?.toString().isNotEmpty ?? false)
-                                      ? data["experience"].toString()
-                                      : "No Experience",
-                                  Colors.orange,
-                                ),
-
-                                const SizedBox(
-                                  width:12,
-                                ),
-
-                                badge(
-                                  "Teacher",
-                                  Colors.green,
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              /// SETTINGS
-              glassCard(
-
-                isDark: isDark,
-
-                child: Column(
-
-                  children: [
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.notifications_none,
-                      "Notifications",
-                    ),
-
-                    divider(isDark),
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.dark_mode,
-                      "Dark Mode",
-                    ),
-
-                    divider(isDark),
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.language,
-                      "Language",
-                    ),
-
-                    divider(isDark),
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.lock_outline,
-                      "Privacy & Security",
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              /// EDIT
-              SizedBox(
-
-                width:
-                double.infinity,
-
-                height: 60,
-
-                child:
-                ElevatedButton.icon(
-
-                  onPressed: () async {
-
-                    final teacherDoc = await FirebaseFirestore.instance
-                        .collection("teachers")
-                        .doc(FirebaseAuth.instance.currentUser!.uid)
-                        .get();
-
-                    final teacher = teacherDoc.data()!;
-
-                    phoneController.text =
-                        teacher["phone"]?.toString() ?? "";
-
-                    qualificationController.text =
-                        teacher["qualification"]?.toString() ?? "";
-
-                    designationController.text =
-                        teacher["designation"]?.toString() ?? "";
-
-                    experienceController.text =
-                        teacher["experience"]?.toString() ?? "";
-
-                    bioController.text =
-                        teacher["bio"]?.toString() ?? "";
-
-                    showDialog(
-
-                      context:context,
-
-                      builder:(_){
-
-                        return Dialog(
-
-                          backgroundColor:
-                          Colors.transparent,
+                  const SizedBox(height: 25),
+
+                  /// PROFILE CARD
+                  glassCard(
+                    isDark: isDark,
+
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.blue,
+
+                          backgroundImage:
+                          photoUrl.toString().isNotEmpty
+                              ? NetworkImage(photoUrl)
+                              : null,
 
                           child:
-
-                          ClipRRect(
-
-                            borderRadius:
-
-                            BorderRadius.circular(
-                              30,
+                          photoUrl.toString().isEmpty
+                              ? Text(
+                            (name.length >= 2
+                                ? name.substring(0, 2)
+                                : name)
+                                .toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              color: Colors.white,
                             ),
+                          )
+                              : null,
+                        ),
 
-                            child:
+                        const SizedBox(height: 18),
 
-                            BackdropFilter(
+                        Text(
+                          user["name"],
 
-                              filter:
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
 
-                              ImageFilter.blur(
-
-                                sigmaX:20,
-
-                                sigmaY:20,
-                              ),
-
-                              child:
-
-                              Container(
-
-                                padding:
-
-                                const EdgeInsets.all(
-                                  24,
-                                ),
-
-                                decoration:
-
-                                BoxDecoration(
-
-                                  color:
-
-                                  isDark
-
-                                      ?
-
-                                  Colors.white
-                                      .withOpacity(
-                                    0.08,
-                                  )
-
-                                      :
-
-                                  Colors.white
-                                      .withOpacity(
-                                    0.4,
-                                  ),
-
-                                  borderRadius:
-
-                                  BorderRadius.circular(
-                                    30,
-                                  ),
-
-                                  border:
-
-                                  Border.all(
-                                    color:
-                                    Colors.white24,
-                                  ),
-                                ),
-
-                                child:
-
-                                SingleChildScrollView(
-
-                                  child:
-
-                                  Column(
-
-                                    mainAxisSize:
-                                    MainAxisSize.min,
-
-                                    children:[
-
-                                      Container(
-
-                                        width:90,
-
-                                        height:90,
-
-                                        decoration:
-
-                                        BoxDecoration(
-
-                                          shape:
-                                          BoxShape.circle,
-
-                                          gradient:
-
-                                          const LinearGradient(
-
-                                            colors:[
-
-                                              Color(
-                                                0xFF008CFF,
-                                              ),
-
-                                              Color(
-                                                0xFF00D4FF,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        child:
-
-                                        profileImage != null
-
-                                            ?
-
-                                        ClipOval(
-
-                                          child:
-
-                                          Image.file(
-
-                                            profileImage!,
-
-                                            fit:
-                                            BoxFit.cover,
-                                          ),
-                                        )
-
-                                            :
-
-                                        const Icon(
-
-                                          Icons.person,
-
-                                          size:42,
-
-                                          color:
-                                          Colors.white,
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:20,
-                                      ),
-
-                                      ElevatedButton.icon(
-
-                                        onPressed:() async {
-
-                                          final result=
-
-                                          await FilePicker
-                                              .platform
-                                              .pickFiles(
-
-                                            type:
-                                            FileType.image,
-                                          );
-
-                                          if(
-                                          result != null
-                                          ){
-
-                                            profileImage=
-
-                                                File(
-
-                                                  result.files
-                                                      .first.path!,
-                                                );
-
-                                            setState(() {});
-                                          }
-                                        },
-
-                                        icon:
-                                        const Icon(
-                                          Icons.photo,
-                                        ),
-
-                                        label:
-                                        const Text(
-                                          "Choose Photo",
-                                        ),
-
-                                        style:
-
-                                        ElevatedButton.styleFrom(
-
-                                          backgroundColor:
-
-                                          const Color(
-                                            0xFF008CFF,
-                                          ),
-
-                                          shape:
-
-                                          RoundedRectangleBorder(
-
-                                            borderRadius:
-
-                                            BorderRadius.circular(
-                                              18,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:18,
-                                      ),
-
-                                      TextField(
-
-                                        controller:
-                                        phoneController,
-
-                                        decoration:
-
-                                        InputDecoration(
-
-                                          labelText:
-                                          "Phone",
-
-                                          filled:true,
-
-                                          fillColor:
-
-                                          isDark
-
-                                              ?
-
-                                          Colors.white
-                                              .withOpacity(
-                                            0.08,
-                                          )
-
-                                              :
-
-                                          Colors.white,
-
-                                          border:
-
-                                          OutlineInputBorder(
-
-                                            borderRadius:
-
-                                            BorderRadius.circular(
-                                              18,
-                                            ),
-
-                                            borderSide:
-                                            BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:14,
-                                      ),
-
-                                      const SizedBox(
-                                        height: 14,
-                                      ),
-
-                                      TextField(
-
-                                        controller: designationController,
-
-                                        decoration: InputDecoration(
-
-                                          labelText: "Designation",
-
-                                          filled: true,
-
-                                          fillColor: isDark
-                                              ? Colors.white.withOpacity(0.08)
-                                              : Colors.white,
-
-                                          border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(18),
-                                            borderSide: BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-
-                                      TextField(
-
-                                        controller:
-                                        qualificationController,
-
-                                        decoration:
-
-                                        InputDecoration(
-
-                                          labelText:
-                                          "Qualification",
-
-                                          filled:true,
-
-                                          fillColor:
-
-                                          isDark
-
-                                              ?
-
-                                          Colors.white
-                                              .withOpacity(
-                                            0.08,
-                                          )
-
-                                              :
-
-                                          Colors.white,
-
-                                          border:
-
-                                          OutlineInputBorder(
-
-                                            borderRadius:
-
-                                            BorderRadius.circular(
-                                              18,
-                                            ),
-
-                                            borderSide:
-                                            BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:14,
-                                      ),
-
-                                      TextField(
-
-                                        controller:
-                                        experienceController,
-
-                                        decoration:
-
-                                        InputDecoration(
-
-                                          labelText:
-                                          "Experience Years",
-
-                                          filled:true,
-
-                                          fillColor:
-
-                                          isDark
-
-                                              ?
-
-                                          Colors.white
-                                              .withOpacity(
-                                            0.08,
-                                          )
-
-                                              :
-
-                                          Colors.white,
-
-                                          border:
-
-                                          OutlineInputBorder(
-
-                                            borderRadius:
-
-                                            BorderRadius.circular(
-                                              18,
-                                            ),
-
-                                            borderSide:
-                                            BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:14,
-                                      ),
-
-                                      TextField(
-
-                                        controller:
-                                        bioController,
-
-                                        maxLines:3,
-
-                                        decoration:
-
-                                        InputDecoration(
-
-                                          labelText:
-                                          "Bio",
-
-                                          filled:true,
-
-                                          fillColor:
-
-                                          isDark
-
-                                              ?
-
-                                          Colors.white
-                                              .withOpacity(
-                                            0.08,
-                                          )
-
-                                              :
-
-                                          Colors.white,
-
-                                          border:
-
-                                          OutlineInputBorder(
-
-                                            borderRadius:
-
-                                            BorderRadius.circular(
-                                              18,
-                                            ),
-
-                                            borderSide:
-                                            BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:24,
-                                      ),
-
-                                      SizedBox(
-
-                                        width:
-                                        double.infinity,
-
-                                        height:55,
-
-                                        child:
-
-                                        ElevatedButton(
-
-                                          style:
-
-                                          ElevatedButton.styleFrom(
-
-                                            backgroundColor:
-
-                                            const Color(
-                                              0xFF008CFF,
-                                            ),
-
-                                            shape:
-
-                                            RoundedRectangleBorder(
-
-                                              borderRadius:
-
-                                              BorderRadius.circular(
-                                                18,
-                                              ),
-                                            ),
-                                          ),
-
-                                          onPressed: () async {
-                                            try {
-                                              String imageUrl = "";
-
-                                              if (profileImage != null) {
-                                                final ref = FirebaseStorage.instance
-                                                    .ref()
-                                                    .child(
-                                                  "teacher_profiles/${FirebaseAuth.instance.currentUser!.uid}",
-                                                );
-
-                                                await ref.putFile(profileImage!);
-
-                                                imageUrl = await ref.getDownloadURL();
-                                              }
-
-                                              final Map<String, dynamic> updateData = {
-                                                "phone": phoneController.text,
-                                                "qualification": qualificationController.text,
-                                                "designation": designationController.text,
-                                                "experience": experienceController.text,
-                                                "bio": bioController.text,
-                                              };
-
-                                              if (imageUrl.isNotEmpty) {
-                                                updateData["photoUrl"] = imageUrl;
-                                              }
-
-                                              await FirebaseFirestore.instance
-                                                  .collection("teachers")
-                                                  .doc(FirebaseAuth.instance.currentUser!.uid)
-                                                  .update(updateData);
-
-                                              if (mounted) {
-                                                Navigator.pop(context);
-
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text("Profile Updated Successfully"),
-                                                  ),
-                                                );
-                                              }
-                                            } catch (e) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(e.toString()),
-                                                ),
-                                              );
-                                            }
-                                          },
-
-                                          child:
-
-                                          const Text(
-
-                                            "SAVE PROFILE",
-
-                                            style:
-
-                                            TextStyle(
-                                              color:
-                                              Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
+                            color: isDark ? Colors.white : Colors.black,
                           ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          "${user["designation"] ?? ""} • ${user["department"] ?? ""}",
+
+                          style: TextStyle(
+                            fontSize: 16,
+
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+
+                        const SizedBox(height: 18),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+
+                          children: [
+                            badge("Top 10%", Colors.orange),
+
+                            const SizedBox(width: 12),
+
+                            badge("Streak 14d", Colors.green),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+
+
+                  const SizedBox(height: 25),
+
+                  /// SETTINGS
+                  glassCard(
+                    isDark: isDark,
+
+                    child: Column(
+                      children: [
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.notifications_none,
+                          "Notifications",
+                        ),
+
+                        divider(isDark),
+
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.dark_mode,
+                          "Dark Mode",
+                        ),
+
+                        divider(isDark),
+
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.language,
+                          "Language",
+                        ),
+
+                        divider(isDark),
+
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.lock_outline,
+                          "Privacy & Security",
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 25),
+
+                  SizedBox(
+                    width: double.infinity,
+
+                    height: 60,
+
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final user = data.data() as Map<String, dynamic>;
+
+                        emailController.text = user.containsKey("email")
+                            ? user["email"].toString()
+                            : "";
+
+                        phoneController.text = user.containsKey("phone")
+                            ? user["phone"].toString()
+                            : "";
+
+
+
+                        bioController.text = user.containsKey("bio")
+                            ? user["bio"].toString()
+                            : "";
+
+                        showEditProfile(
+                          data,
+                          photoUrl,
                         );
-
                       },
-                    );
-                  },
 
-                  icon: const Icon(
-                    Icons.edit,
-                  ),
+                      icon: const Icon(Icons.edit),
 
-                  label: const Text(
-                    "Edit Profile",
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              /// LOGOUT
-              SizedBox(
-
-                width:
-                double.infinity,
-
-                height: 60,
-
-                child:
-                ElevatedButton.icon(
-
-                  style:
-                  ElevatedButton.styleFrom(
-
-                    backgroundColor:
-                    Colors.red
-                        .withOpacity(
-                      0.12,
+                      label: const Text("Edit Profile"),
                     ),
                   ),
+                  const SizedBox(height: 15),
 
-                  onPressed: () async {
-                    await FirebaseAuth.instance.signOut();
+                  SizedBox(
+                    width: double.infinity,
 
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RoleSelectionPage(),
+                    height: 60,
+
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.withOpacity(0.12),
                       ),
-                          (route) => false,
-                    );
-                  },
 
-                  icon: const Icon(
-                    Icons.logout,
-                    color: Colors.red,
-                  ),
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
 
-                  label: const Text(
-                    "Logout",
+                        Navigator.pushAndRemoveUntil(
+                          context,
 
-                    style: TextStyle(
-                      color: Colors.red,
+                          MaterialPageRoute(
+                            builder: (_) => const RoleSelectionPage(),
+                          ),
+
+                              (route) => false,
+                        );
+                      },
+
+                      icon: const Icon(Icons.logout, color: Colors.red),
+
+                      label: const Text(
+                        "Logout",
+
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ),
-                ),
-              ),
 
-              const SizedBox(height: 100),
-            ],
-          ),
+                  const SizedBox(height: 100),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
   }
+
+  Widget profileField(
+      TextEditingController controller,
+
+      String hint,
+
+      IconData icon,
+
+      bool isDark,
+      ) {
+    return TextField(
+      controller: controller,
+
+      style: TextStyle(color: isDark ? Colors.white : Colors.black),
+
+      decoration: InputDecoration(
+        hintText: hint,
+
+        prefixIcon: Icon(icon),
+
+        filled: true,
+
+        fillColor: isDark ? Colors.white.withOpacity(0.08) : Colors.white,
+
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  void showEditProfile(
+      DocumentSnapshot data,
+      String photoUrl,
+      ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+
+              child: Container(
+                padding: const EdgeInsets.all(24),
+
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : Colors.white.withOpacity(0.45),
+
+                  borderRadius: BorderRadius.circular(30),
+
+                  border: Border.all(color: Colors.white24),
+                ),
+
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+
+                    children: [
+                      Container(
+                        width: 95,
+
+                        height: 95,
+
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF008CFF), Color(0xFF00D4FF)],
+                          ),
+                        ),
+
+                        child: profileImage != null
+                            ? ClipOval(
+                          child: Image.file(
+                            profileImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : photoUrl.toString().isNotEmpty
+                            ? ClipOval(
+                          child: Image.network(
+                            photoUrl,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 45,
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final result =
+                          await FilePicker.platform.pickFiles(
+                            type: FileType.image,
+                            allowMultiple: false,
+                          );
+                          ;
+
+                          if (result == null) return;
+
+                          if (result.files.first.size > 5 * 1024 * 1024) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Maximum image size is 5 MB"),
+                              ),
+                            );
+                            return;
+                          }
+
+                          profileImage = File(result.files.first.path!);
+
+                          setState(() {});
+                        },
+
+                        icon: const Icon(Icons.photo),
+
+                        label: const Text("Choose Photo"),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      TextField(
+                        controller: emailController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          hintText: "Email",
+                          prefixIcon: const Icon(Icons.email),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      profileField(
+                        phoneController,
+
+                        "Phone",
+
+                        Icons.phone,
+
+                        isDark,
+                      ),
+
+                      const SizedBox(height: 12),
+
+
+
+
+
+                      TextField(
+                        controller: bioController,
+
+                        maxLines: 3,
+
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+
+                        decoration: InputDecoration(
+                          hintText: "About yourself",
+
+                          prefixIcon: const Icon(Icons.info),
+
+                          filled: true,
+
+                          fillColor: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.white,
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      SizedBox(
+                        width: double.infinity,
+
+                        height: 55,
+
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF008CFF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          onPressed: () async {
+                            try {
+                              String imageUrl = "";
+
+                              if (profileImage != null) {
+                                final supabase = Supabase.instance.client;
+
+                                final fileName =
+                                    "${FirebaseAuth.instance.currentUser!.uid}.jpg";
+
+                                final bytes = await profileImage!.readAsBytes();
+
+                                await supabase.storage
+                                    .from("profile-images")
+                                    .uploadBinary(
+                                  fileName,
+                                  bytes,
+                                  fileOptions: const FileOptions(
+                                    upsert: true,
+                                  ),
+                                );
+
+                                imageUrl = supabase.storage
+                                    .from("profile-images")
+                                    .getPublicUrl(fileName);
+                              }
+
+                              final Map<String, dynamic> updateData = {
+                                "email": emailController.text,
+                                "phone": phoneController.text,
+                                "bio": bioController.text,
+                              };
+
+                              if (imageUrl.isNotEmpty) {
+                                updateData["photoUrl"] = imageUrl;
+                              }
+
+                              final email =
+                                  FirebaseAuth.instance.currentUser!.email;
+
+                              final query =
+                              await FirebaseFirestore.instance
+                                  .collection("teachers")
+                                  .where("email", isEqualTo: email)
+                                  .limit(1)
+                                  .get();
+
+                              if (query.docs.isEmpty) {
+                                throw Exception("User document not found");
+                              }
+                              await query.docs.first.reference.update(updateData);
+                              profileImage = null;
+
+                              Navigator.pop(context);
+                            } catch (e, stackTrace) {
+                              debugPrint(e.toString());
+                              debugPrint(stackTrace.toString());
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text(
+                            "SAVE PROFILE",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // KEEP ALL OTHER METHODS BELOW SAME
 
   Widget settingTile(
       BuildContext context,
@@ -1047,134 +620,159 @@ class _TeacherProfilePageState
       IconData icon,
       String title,
       ) {
-
     return ListTile(
-
       onTap: () {
-
+        /// DARK MODE
         if (title == "Dark Mode") {
+          EduMateApp.of(context)?.toggleTheme();
+        }
+        /// LANGUAGE
+        else if (title == "Language") {
+          showModalBottomSheet(
+            context: context,
 
-          EduMateApp.of(
+            backgroundColor: isDark ? const Color(0xFF081120) : Colors.white,
+
+            builder: (_) {
+              return Padding(
+                padding: const EdgeInsets.all(20),
+
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+
+                  children: [
+                    Text(
+                      "Select Language",
+
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    languageTile(isDark, "English"),
+
+                    languageTile(isDark, "Hindi"),
+
+                    languageTile(isDark, "Telugu"),
+                  ],
+                ),
+              );
+            },
+          );
+        }
+        /// NOTIFICATIONS
+        else if (title == "Notifications") {
+          ScaffoldMessenger.of(
             context,
-          )?.toggleTheme();
+          ).showSnackBar(const SnackBar(content: Text("Notifications Opened")));
+        }
+        /// PRIVACY
+        else if (title == "Privacy & Security") {
+          showDialog(
+            context: context,
+
+            builder: (_) {
+              return AlertDialog(
+                title: const Text("Privacy & Security"),
+
+                content: const Text("Security settings page here."),
+
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+
+                    child: const Text("Close"),
+                  ),
+                ],
+              );
+            },
+          );
         }
       },
 
       leading: CircleAvatar(
+        backgroundColor: Colors.blue.withOpacity(0.15),
 
-        backgroundColor:
-        Colors.blue
-            .withOpacity(0.15),
-
-        child: Icon(
-          icon,
-          color: Colors.blue,
-        ),
+        child: Icon(icon, color: Colors.blue),
       ),
 
       title: Text(
         title,
 
         style: TextStyle(
-          color:
-          isDark
-              ? Colors.white
-              : Colors.black,
+          color: isDark ? Colors.white : Colors.black,
 
           fontSize: 18,
-          fontWeight:
-          FontWeight.w600,
+          fontWeight: FontWeight.w600,
         ),
       ),
 
       trailing: Icon(
         Icons.arrow_forward_ios,
 
-        color:
-        isDark
-            ? Colors.white70
-            : Colors.black54,
+        color: isDark ? Colors.white70 : Colors.black54,
 
         size: 18,
       ),
     );
   }
 
-  Widget divider(bool isDark) {
+  Widget languageTile(bool isDark, String language) {
+    return ListTile(
+      title: Text(
+        language,
 
-    return Divider(
-      color:
-      isDark
-          ? Colors.white.withOpacity(
-        0.08,
-      )
-          : Colors.black12,
+        style: TextStyle(color: isDark ? Colors.white : Colors.black),
+      ),
+
+      onTap: () {},
     );
   }
 
-  Widget badge(
-      String text,
-      Color color,
-      ) {
+  Widget divider(bool isDark) {
+    return Divider(
+      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black12,
+    );
+  }
 
+  Widget badge(String text, Color color) {
     return Container(
-
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
 
       decoration: BoxDecoration(
-        color:
-        color.withOpacity(0.15),
+        color: color.withOpacity(0.15),
 
-        borderRadius:
-        BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
       ),
 
       child: Text(
         text,
 
-        style: TextStyle(
-          color: color,
-          fontWeight:
-          FontWeight.bold,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget statCard(
-      bool isDark,
-      String title,
-      String value,
-      ) {
-
+  Widget statCard(bool isDark, String title, String value) {
     return glassCard(
-
       isDark: isDark,
 
       child: Padding(
-
-        padding:
-        const EdgeInsets.symmetric(
-          vertical: 18,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 18),
 
         child: Column(
-
           children: [
-
             Text(
               title,
 
-              style: TextStyle(
-                color:
-                isDark
-                    ? Colors.white70
-                    : Colors.black54,
-              ),
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
             ),
 
             const SizedBox(height: 10),
@@ -1184,10 +782,8 @@ class _TeacherProfilePageState
 
               style: const TextStyle(
                 fontSize: 32,
-                fontWeight:
-                FontWeight.bold,
-                color:
-                Colors.blue,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
               ),
             ),
           ],
@@ -1196,54 +792,25 @@ class _TeacherProfilePageState
     );
   }
 
-  Widget glassCard({
-    required Widget child,
-    required bool isDark,
-  }) {
-
+  Widget glassCard({required Widget child, required bool isDark}) {
     return ClipRRect(
-
-      borderRadius:
-      BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(30),
 
       child: BackdropFilter(
-
-        filter:
-        ImageFilter.blur(
-          sigmaX: 20,
-          sigmaY: 20,
-        ),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
 
         child: Container(
-
           width: double.infinity,
 
-          padding:
-          const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
 
           decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.06) : Colors.white,
 
-            color:
-            isDark
-                ? Colors.white
-                .withOpacity(
-              0.06,
-            )
-                : Colors.white,
-
-            borderRadius:
-            BorderRadius.circular(
-              30,
-            ),
+            borderRadius: BorderRadius.circular(30),
 
             border: Border.all(
-              color:
-              isDark
-                  ? Colors.white
-                  .withOpacity(
-                0.08,
-              )
-                  : Colors.black12,
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black12,
             ),
           ),
 
@@ -1253,13 +820,8 @@ class _TeacherProfilePageState
     );
   }
 
-  Widget glassIcon({
-    required IconData icon,
-    VoidCallback? onTap,
-  }) {
-
+  Widget glassIcon({required IconData icon, VoidCallback? onTap}) {
     return GestureDetector(
-
       onTap: onTap,
 
       child: Container(
@@ -1267,17 +829,12 @@ class _TeacherProfilePageState
         height: 50,
 
         decoration: BoxDecoration(
-          color:
-          Colors.white
-              .withOpacity(0.08),
+          color: Colors.white.withOpacity(0.08),
 
           shape: BoxShape.circle,
         ),
 
-        child: Icon(
-          icon,
-          color: Colors.white,
-        ),
+        child: Icon(icon, color: Colors.white),
       ),
     );
   }

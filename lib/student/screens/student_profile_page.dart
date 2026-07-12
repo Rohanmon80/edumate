@@ -2,8 +2,8 @@ import 'dart:ui';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -48,20 +48,35 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
           : const Color(0xFFF4F8FC),
 
       body: SafeArea(
-        child: StreamBuilder<DocumentSnapshot>(
+        child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection("users")
-              .doc(FirebaseAuth.instance.currentUser!.uid)
+              .where(
+            "email",
+            isEqualTo: FirebaseAuth.instance.currentUser!.email,
+          )
+              .limit(1)
               .snapshots(),
 
           builder: (context, snapshot) {
-            if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const Center(child: CircularProgressIndicator());
+            if (!snapshot.hasData ||
+                snapshot.data!.docs.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             }
 
-            final data = snapshot.data!;
+            final data = snapshot.data!.docs.first;
 
-            String name = data["name"];
+            final user =
+            data.data() as Map<String, dynamic>;
+
+            String name = user["name"] ?? "";
+
+            final photoUrl =
+            user.containsKey("photoUrl")
+                ? user["photoUrl"] ?? ""
+                : "";
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -112,36 +127,32 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-
                           backgroundColor: Colors.blue,
 
                           backgroundImage:
-                          data["photoUrl"] != null &&
-                              data["photoUrl"].toString().isNotEmpty
-                              ? NetworkImage(data["photoUrl"])
+                          photoUrl.toString().isNotEmpty
+                              ? NetworkImage(photoUrl)
                               : null,
 
                           child:
-                              !(data.data().toString().contains("photoUrl")) ||
-                                  data["photoUrl"] == null ||
-                                  data["photoUrl"] == ""
+                          photoUrl.toString().isEmpty
                               ? Text(
-                                  (name.length >= 2
-                                          ? name.substring(0, 2)
-                                          : name)
-                                      .toUpperCase(),
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    color: Colors.white,
-                                  ),
-                                )
+                            (name.length >= 2
+                                ? name.substring(0, 2)
+                                : name)
+                                .toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              color: Colors.white,
+                            ),
+                          )
                               : null,
                         ),
 
                         const SizedBox(height: 18),
 
                         Text(
-                          data["name"],
+                          user["name"],
 
                           style: TextStyle(
                             fontSize: 28,
@@ -154,7 +165,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         const SizedBox(height: 6),
 
                         Text(
-                          "${data["rollNumber"]} • ${data["department"]}",
+                          "${user["rollNumber"] ?? ""} • ${user["department"] ?? ""}",
 
                           style: TextStyle(
                             fontSize: 16,
@@ -189,7 +200,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         child: statCard(
                           isDark,
                           "CGPA",
-                          (data["cgpa"] ?? "-").toString(),
+                          (user["cgpa"] ?? "-").toString(),
                         ),
                       ),
 
@@ -199,7 +210,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         child: statCard(
                           isDark,
                           "Attend.",
-                          "${data["attendance"]  ?? 0}%",
+                          "${user["attendance"]  ?? 0}%",
                         ),
                       ),
 
@@ -209,7 +220,7 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                         child: statCard(
                           isDark,
                           "Semester",
-                          (data["semester"] ?? "-").toString(),
+                          (user["semester"] ?? "-").toString(),
                         ),
                       ),
                     ],
@@ -287,7 +298,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                             ? user["bio"].toString()
                             : "";
 
-                        showEditProfile(data);
+                        showEditProfile(
+                          data,
+                          photoUrl,
+                        );
                       },
 
                       icon: const Icon(Icons.edit),
@@ -373,7 +387,10 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
     );
   }
 
-  void showEditProfile(DocumentSnapshot data) {
+  void showEditProfile(
+      DocumentSnapshot data,
+      String photoUrl,
+      ) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
@@ -422,34 +439,50 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
                         child: profileImage != null
                             ? ClipOval(
-                                child: Image.file(
-                                  profileImage!,
-
-                                  fit: BoxFit.cover,
-                                ),
-                              )
+                          child: Image.file(
+                            profileImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : photoUrl.toString().isNotEmpty
+                            ? ClipOval(
+                          child: Image.network(
+                            photoUrl,
+                            fit: BoxFit.cover,
+                          ),
+                        )
                             : const Icon(
-                                Icons.person,
-
-                                color: Colors.white,
-
-                                size: 45,
-                              ),
+                          Icons.person,
+                          color: Colors.white,
+                          size: 45,
+                        ),
                       ),
 
                       const SizedBox(height: 18),
 
                       ElevatedButton.icon(
                         onPressed: () async {
-                          final result = await FilePicker.platform.pickFiles(
+                          final result =
+                          await FilePicker.platform.pickFiles(
                             type: FileType.image,
+                            allowMultiple: false,
                           );
+                          ;
 
-                          if (result != null) {
-                            profileImage = File(result.files.first.path!);
+                          if (result == null) return;
 
-                            setState(() {});
+                          if (result.files.first.size > 5 * 1024 * 1024) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Maximum image size is 5 MB"),
+                              ),
+                            );
+                            return;
                           }
+
+                          profileImage = File(result.files.first.path!);
+
+                          setState(() {});
                         },
 
                         icon: const Icon(Icons.photo),
@@ -459,14 +492,18 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
 
                       const SizedBox(height: 18),
 
-                      profileField(
-                        emailController,
-
-                        "Email",
-
-                        Icons.email,
-
-                        isDark,
+                      TextField(
+                        controller: emailController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          hintText: "Email",
+                          prefixIcon: const Icon(Icons.email),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
 
                       const SizedBox(height: 12),
@@ -542,12 +579,26 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                               String imageUrl = "";
 
                               if (profileImage != null) {
-                                final ref = FirebaseStorage.instance.ref().child(
-                                  "profile_photos/${FirebaseAuth.instance.currentUser!.uid}",
+                                final supabase = Supabase.instance.client;
+
+                                final fileName =
+                                    "${FirebaseAuth.instance.currentUser!.uid}.jpg";
+
+                                final bytes = await profileImage!.readAsBytes();
+
+                                await supabase.storage
+                                    .from("profile-images")
+                                    .uploadBinary(
+                                  fileName,
+                                  bytes,
+                                  fileOptions: const FileOptions(
+                                    upsert: true,
+                                  ),
                                 );
 
-                                await ref.putFile(profileImage!);
-                                imageUrl = await ref.getDownloadURL();
+                                imageUrl = supabase.storage
+                                    .from("profile-images")
+                                    .getPublicUrl(fileName);
                               }
 
                               final Map<String, dynamic> updateData = {
@@ -561,15 +612,31 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                                 updateData["photoUrl"] = imageUrl;
                               }
 
+                              final email =
+                                  FirebaseAuth.instance.currentUser!.email;
+
+                              final query =
                               await FirebaseFirestore.instance
                                   .collection("users")
-                                  .doc(FirebaseAuth.instance.currentUser!.uid)
-                                  .update(updateData);
+                                  .where("email", isEqualTo: email)
+                                  .limit(1)
+                                  .get();
+
+                              if (query.docs.isEmpty) {
+                                throw Exception("User document not found");
+                              }
+                              await query.docs.first.reference.update(updateData);
+                              profileImage = null;
 
                               Navigator.pop(context);
-                            } catch (e) {
+                            } catch (e, stackTrace) {
+                              debugPrint(e.toString());
+                              debugPrint(stackTrace.toString());
+
                               ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(e.toString())),
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                ),
                               );
                             }
                           },
@@ -635,8 +702,6 @@ class _StudentProfilePageState extends State<StudentProfilePage> {
                     languageTile(isDark, "English"),
 
                     languageTile(isDark, "Hindi"),
-
-                    languageTile(isDark, "Bengali"),
 
                     languageTile(isDark, "Telugu"),
                   ],

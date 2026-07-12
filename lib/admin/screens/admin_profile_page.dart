@@ -2,8 +2,8 @@ import 'dart:ui';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,1035 +12,608 @@ import '../../main.dart';
 import '../../role_selection_page.dart';
 
 class AdminProfilePage extends StatefulWidget {
-
-  const AdminProfilePage({
-    super.key,
-  });
+  const AdminProfilePage({super.key});
 
   @override
-  State<AdminProfilePage>
-  createState() =>
-      _AdminProfilePageState();
+  State<AdminProfilePage> createState() => _AdminProfilePageState();
 }
 
-class _AdminProfilePageState
-    extends State<AdminProfilePage> {
+class _AdminProfilePageState extends State<AdminProfilePage> {
+  final emailController = TextEditingController();
 
-  final phoneController =
-  TextEditingController();
+  final phoneController = TextEditingController();
 
-  final designationController =
-  TextEditingController();
 
-  final officeController =
-  TextEditingController();
 
-  final bioController =
-  TextEditingController();
+  final bioController = TextEditingController();
 
   File? profileImage;
 
   @override
   void dispose() {
+    emailController.dispose();
     phoneController.dispose();
-    designationController.dispose();
-    officeController.dispose();
+
     bioController.dispose();
     super.dispose();
   }
 
   @override
-  Widget build(
-      BuildContext context) {
-
-    final bool isDark =
-        Theme.of(context)
-            .brightness ==
-            Brightness.dark;
+  Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-
-      backgroundColor:
-      isDark
-          ? const Color(
-        0xFF081120,
-      )
-          : const Color(
-        0xFFF4F8FC,
-      ),
+      backgroundColor: isDark
+          ? const Color(0xFF081120)
+          : const Color(0xFFF4F8FC),
 
       body: SafeArea(
-
-        child:
-        StreamBuilder<
-            DocumentSnapshot>(
-
-          stream:
-
-          FirebaseFirestore
-              .instance
-
-              .collection(
-            "admins",
+        child: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection("admins")
+              .where(
+            "email",
+            isEqualTo: FirebaseAuth.instance.currentUser!.email,
           )
-
-              .doc(
-
-            FirebaseAuth
-                .instance
-                .currentUser!
-                .uid,
-          )
-
+              .limit(1)
               .snapshots(),
 
-          builder:
-              (
-              context,
-              profileSnapshot,
-              ) {
-
-            if (!profileSnapshot
-                .hasData) {
-
+          builder: (context, snapshot) {
+            if (!snapshot.hasData ||
+                snapshot.data!.docs.isEmpty) {
               return const Center(
-                child:
-                CircularProgressIndicator(),
+                child: CircularProgressIndicator(),
               );
             }
 
-            final profile =
-            profileSnapshot
-                .data!;
+            final data = snapshot.data!.docs.first;
+
+            final user =
+            data.data() as Map<String, dynamic>;
+
+            String name = user["name"] ?? "";
+
+            final photoUrl =
+            user.containsKey("photoUrl")
+                ? user["photoUrl"] ?? ""
+                : "";
 
             return SingleChildScrollView(
-
-              padding:
-              const EdgeInsets
-                  .all(
-                20,
-              ),
+              padding: const EdgeInsets.all(20),
 
               child: Column(
-
                 children: [
-
-                  /// TOP BAR
+                  /// TOP
                   Row(
-
-                    mainAxisAlignment:
-                    MainAxisAlignment
-                        .spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
 
                     children: [
-
                       Text(
+                        "Profile",
 
-                        "Admin Profile",
+                        style: TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
 
-                        style:
-                        TextStyle(
-
-                          fontSize:
-                          34,
-
-                          fontWeight:
-                          FontWeight.bold,
-
-                          color:
-                          isDark
-                              ? Colors.white
-                              : Colors.black,
+                          color: isDark ? Colors.white : Colors.black,
                         ),
                       ),
 
                       Row(
-
                         children: [
-
                           glassIcon(
+                            icon: isDark ? Icons.light_mode : Icons.dark_mode,
 
-                            context:
-                            context,
-
-                            icon:
-
-                            isDark
-
-                                ? Icons.light_mode
-
-                                : Icons.dark_mode,
-
-                            onTap:
-                                () {
-
-                              EduMateApp.of(
-                                  context)
-                                  ?.toggleTheme();
+                            onTap: () {
+                              EduMateApp.of(context)?.toggleTheme();
                             },
                           ),
 
-                          const SizedBox(
-                            width:
-                            12,
-                          ),
+                          const SizedBox(width: 12),
 
-                          glassIcon(
-
-                            context:
-                            context,
-
-                            icon:
-                            Icons.notifications_none,
-                          ),
+                          glassIcon(icon: Icons.notifications_none),
                         ],
                       ),
                     ],
                   ),
 
-                  const SizedBox(
-                    height:
-                    28,
-                  ),
+                  const SizedBox(height: 25),
 
-                  /// PROFILE
-
+                  /// PROFILE CARD
                   glassCard(
+                    isDark: isDark,
 
-                    context:
-                    context,
-
-                    child:
-                    Column(
-
+                    child: Column(
                       children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.blue,
 
-                        Container(
-
-                          width:
-                          110,
-
-                          height:
-                          110,
-
-                          decoration:
-                          const BoxDecoration(
-
-                            shape:
-                            BoxShape.circle,
-
-                            gradient:
-                            LinearGradient(
-
-                              colors: [
-
-                                Color(
-                                  0xFF005BEA,
-                                ),
-
-                                Color(
-                                  0xFF00C6FB,
-                                ),
-                              ],
-                            ),
-                          ),
+                          backgroundImage:
+                          photoUrl.toString().isNotEmpty
+                              ? NetworkImage(photoUrl)
+                              : null,
 
                           child:
-                          Center(
-
-                            child:
-                            Text(
-
-                              (
-                                  profile.data()
-                                      .toString()
-                                      .contains(
-                                      "name"
-                                  )
-
-                                      ? profile["name"]
-
-                                      .toString()
-
-                                      : "Admin"
-
-                              )
-
-                                  .toString().length >= 2
-                                  ? profile["name"].toString().substring(0, 2).toUpperCase()
-                                  : profile["name"].toString().toUpperCase(),
-
-                              style:
-                              const TextStyle(
-
-                                fontSize:40,
-
-                                fontWeight:
-                                FontWeight.bold,
-
-                                color:
-                                Colors.white,
-                              ),
-                            )
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height:
-                          20,
-                        ),
-
-                        Text(
-
-                          profile.data().toString().contains(
-                              "name"
+                          photoUrl.toString().isEmpty
+                              ? Text(
+                            (name.length >= 2
+                                ? name.substring(0, 2)
+                                : name)
+                                .toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 32,
+                              color: Colors.white,
+                            ),
                           )
-                              ? profile["name"]
-                              : "Admin",
+                              : null,
+                        ),
 
-                          style:
-                          TextStyle(
+                        const SizedBox(height: 18),
 
-                            fontSize:
-                            30,
+                        Text(
+                          user["name"],
 
-                            fontWeight:
-                            FontWeight.bold,
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
 
-                            color:
-                            isDark
-                                ? Colors.white
-                                : Colors.black,
+                            color: isDark ? Colors.white : Colors.black,
                           ),
                         ),
 
-                        const SizedBox(
-                          height:
-                          6,
-                        ),
+                        const SizedBox(height: 6),
 
                         Text(
-                          profile["designation"]?.toString() ?? "Administrator",
+                          "${user["designation"] ?? "Administrator"}",
+
                           style: TextStyle(
                             fontSize: 16,
-                            color: isDark
-                                ? Colors.white70
-                                : Colors.black54,
+
+                            color: isDark ? Colors.white70 : Colors.black54,
                           ),
                         ),
 
+                        const SizedBox(height: 18),
 
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+
+                          children: [
+                            badge("Top 10%", Colors.orange),
+
+                            const SizedBox(width: 12),
+
+                            badge("Streak 14d", Colors.green),
+                          ],
+                        ),
                       ],
                     ),
                   ),
 
-                  const SizedBox(
-                    height:
-                    25,
+                  const SizedBox(height: 25),
+
+
+                  const SizedBox(height: 25),
+
+                  /// SETTINGS
+                  glassCard(
+                    isDark: isDark,
+
+                    child: Column(
+                      children: [
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.notifications_none,
+                          "Notifications",
+                        ),
+
+                        divider(isDark),
+
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.dark_mode,
+                          "Dark Mode",
+                        ),
+
+                        divider(isDark),
+
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.language,
+                          "Language",
+                        ),
+
+                        divider(isDark),
+
+                        settingTile(
+                          context,
+                          isDark,
+                          Icons.lock_outline,
+                          "Privacy & Security",
+                        ),
+                      ],
+                    ),
                   ),
 
-                  /// STATS
+                  const SizedBox(height: 25),
 
-                  FutureBuilder<List<QuerySnapshot>>(
+                  SizedBox(
+                    width: double.infinity,
 
-                    future:
-                    Future.wait([
+                    height: 60,
 
-                      FirebaseFirestore
-                          .instance
-                          .collection(
-                        "users",
-                      )
-                          .where(
-                        "role",
-                        isEqualTo:
-                        "student",
-                      )
-                          .get(),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        final user = data.data() as Map<String, dynamic>;
 
-                      FirebaseFirestore
-                          .instance
-                          .collection(
-                        "teachers",
-                      )
-                          .get(),
+                        emailController.text = user.containsKey("email")
+                            ? user["email"].toString()
+                            : "";
 
-                      FirebaseFirestore
-                          .instance
-                          .collection(
-                        "admins",
-                      )
-                          .get(),
+                        phoneController.text = user.containsKey("phone")
+                            ? user["phone"].toString()
+                            : "";
 
-                    ]),
 
-                    builder:
-                        (
-                        context,
-                        snapshot,
-                        ){
 
-                      if(
-                      !snapshot.hasData
-                      ){
+                        bioController.text = user.containsKey("bio")
+                            ? user["bio"].toString()
+                            : "";
 
-                        return const Center(
-                          child:
-                          CircularProgressIndicator(),
+                        showEditProfile(
+                          data,
+                          photoUrl,
                         );
-                      }
-
-                      final data =
-                      snapshot.data!;
-
-                      int students =
-
-                          data[0]
-                              .docs
-                              .length;
-
-                      int teachers =
-
-                          data[1]
-                              .docs
-                              .length;
-
-                      int admins =
-
-                          data[2]
-                              .docs
-                              .length;
-
-                      return Row(
-
-                        children:[
-
-                          Expanded(
-                            child:
-                            statCard(
-                              context,
-                              "Students",
-                              students
-                                  .toString(),
-                            ),
-                          ),
-
-                          const SizedBox(
-                            width:12,
-                          ),
-
-                          Expanded(
-                            child:
-                            statCard(
-                              context,
-                              "Faculty",
-                              teachers
-                                  .toString(),
-                            ),
-                          ),
-
-                          const SizedBox(
-                            width:12,
-                          ),
-
-                          Expanded(
-                            child:
-                            statCard(
-                              context,
-                              "Admins",
-                              admins
-                                  .toString(),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-
-                  const SizedBox(
-                    height:25,
-                  ),
-
-
-
-
-              /// SETTINGS
-              glassCard(
-
-                context: context,
-
-                child: Column(
-
-                  children: [
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.notifications_none,
-                      "Notifications",
-                    ),
-
-                    divider(isDark),
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.dark_mode,
-                      "Dark Mode",
-                    ),
-
-                    divider(isDark),
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.language,
-                      "Language",
-                    ),
-
-                    divider(isDark),
-
-                    settingTile(
-                      context,
-                      isDark,
-                      Icons.lock_outline,
-                      "Privacy & Security",
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              /// EDIT PROFILE
-              SizedBox(
-
-                width:
-                double.infinity,
-
-                height: 60,
-
-                child:
-                ElevatedButton.icon(
-
-                  onPressed: () {
-                    phoneController.text =
-                        profile["phone"]?.toString() ?? "";
-
-                    designationController.text =
-                        profile["designation"]?.toString() ?? "";
-
-                    officeController.text =
-                        profile["office"]?.toString() ?? "";
-
-                    bioController.text =
-                        profile["bio"]?.toString() ?? "";
-
-                    showDialog(
-
-                      context:context,
-
-                      builder:(_){
-
-                        return Dialog(
-
-                          backgroundColor:
-                          Colors.transparent,
-
-                          child:
-
-                          ClipRRect(
-
-                            borderRadius:
-
-                            BorderRadius.circular(
-                              30,
-                            ),
-
-                            child:
-
-                            BackdropFilter(
-
-                              filter:
-
-                              ImageFilter.blur(
-
-                                sigmaX:20,
-
-                                sigmaY:20,
-                              ),
-
-                              child:
-
-                              Container(
-
-                                padding:
-
-                                const EdgeInsets.all(
-                                  24,
-                                ),
-
-                                decoration:
-
-                                BoxDecoration(
-
-                                  color:
-
-                                  isDark
-
-                                      ?
-
-                                  Colors.white
-                                      .withOpacity(
-                                    0.08,
-                                  )
-
-                                      :
-
-                                  Colors.white
-                                      .withOpacity(
-                                    0.4,
-                                  ),
-
-                                  borderRadius:
-
-                                  BorderRadius.circular(
-                                    30,
-                                  ),
-
-                                  border:
-
-                                  Border.all(
-                                    color:
-                                    Colors.white24,
-                                  ),
-                                ),
-
-                                child:
-
-                                SingleChildScrollView(
-
-                                  child:
-
-                                  Column(
-
-                                    mainAxisSize:
-                                    MainAxisSize.min,
-
-                                    children:[
-
-                                      Container(
-
-                                        width:95,
-
-                                        height:95,
-
-                                        decoration:
-
-                                        const BoxDecoration(
-
-                                          shape:
-                                          BoxShape.circle,
-
-                                          gradient:
-
-                                          LinearGradient(
-
-                                            colors:[
-
-                                              Color(
-                                                0xFF005BEA,
-                                              ),
-
-                                              Color(
-                                                0xFF00C6FB,
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-
-                                        child:
-
-                                        profileImage != null
-
-                                            ?
-
-                                        ClipOval(
-
-                                          child:
-
-                                          Image.file(
-
-                                            profileImage!,
-
-                                            fit:
-                                            BoxFit.cover,
-                                          ),
-                                        )
-
-                                            :
-
-                                        const Icon(
-
-                                          Icons.person,
-
-                                          color:
-                                          Colors.white,
-
-                                          size:42,
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:20,
-                                      ),
-
-                                      ElevatedButton.icon(
-
-                                        onPressed:() async {
-
-                                          final result=
-
-                                          await FilePicker
-                                              .platform
-                                              .pickFiles(
-
-                                            type:
-                                            FileType.image,
-                                          );
-
-                                          if(
-                                          result != null
-                                          ){
-
-                                            profileImage=
-
-                                                File(
-
-                                                  result.files
-                                                      .first.path!,
-                                                );
-
-                                            setState(() {});
-                                          }
-                                        },
-
-                                        icon:
-                                        const Icon(
-                                          Icons.photo,
-                                        ),
-
-                                        label:
-                                        const Text(
-                                          "Choose Photo",
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:18,
-                                      ),
-
-                                      editField(
-
-                                        phoneController,
-
-                                        "Phone",
-
-                                        Icons.phone,
-                                      ),
-
-                                      const SizedBox(
-                                        height:14,
-                                      ),
-
-                                      editField(
-
-                                        designationController,
-
-                                        "Designation",
-
-                                        Icons.badge,
-                                      ),
-
-                                      const SizedBox(
-                                        height:14,
-                                      ),
-
-                                      editField(
-
-                                        officeController,
-
-                                        "Office Room",
-
-                                        Icons.room,
-                                      ),
-
-                                      const SizedBox(
-                                        height:14,
-                                      ),
-
-                                      TextField(
-
-                                        controller:
-                                        bioController,
-
-                                        maxLines:3,
-
-                                        decoration:
-
-                                        InputDecoration(
-
-                                          hintText:
-                                          "About Admin",
-
-                                          prefixIcon:
-
-                                          const Icon(
-                                            Icons.info,
-                                          ),
-
-                                          filled:true,
-
-                                          fillColor:
-
-                                          isDark
-
-                                              ?
-
-                                          Colors.white
-                                              .withOpacity(
-                                            0.08,
-                                          )
-
-                                              :
-
-                                          Colors.white,
-
-                                          border:
-
-                                          OutlineInputBorder(
-
-                                            borderRadius:
-
-                                            BorderRadius.circular(
-                                              18,
-                                            ),
-
-                                            borderSide:
-                                            BorderSide.none,
-                                          ),
-                                        ),
-                                      ),
-
-                                      const SizedBox(
-                                        height:24,
-                                      ),
-
-                                      SizedBox(
-
-                                        width:
-                                        double.infinity,
-
-                                        height:55,
-
-                                        child:
-
-                                        ElevatedButton(
-
-                                          onPressed:
-                                              () async {
-
-                                            String imageUrl="";
-
-                                            if(
-                                            profileImage != null
-                                            ){
-
-                                              final ref=
-
-                                              FirebaseStorage
-                                                  .instance
-
-                                                  .ref()
-
-                                                  .child(
-
-                                                "admin_profiles/${FirebaseAuth.instance.currentUser!.uid}",
-                                              );
-
-                                              await ref.putFile(
-                                                profileImage!,
-                                              );
-
-                                              imageUrl=
-
-                                              await ref
-                                                  .getDownloadURL();
-                                            }
-                                            try {
-                                              await FirebaseFirestore.instance
-                                                  .collection("admins")
-                                                  .doc(FirebaseAuth.instance.currentUser!.uid)
-                                                  .update({
-                                                if (imageUrl.isNotEmpty) "photoUrl": imageUrl,
-                                                "phone": phoneController.text,
-                                                "designation": designationController.text,
-                                                "office": officeController.text,
-                                                "bio": bioController.text,
-                                              });
-
-                                              Navigator.pop(context);
-
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(
-                                                  content: Text("Profile Updated Successfully"),
-                                                ),
-                                              );
-                                            } catch (e) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(e.toString()),
-                                                ),
-                                              );
-                                            }
-
-
-
-                                          },
-
-                                          child:
-
-                                          const Text(
-                                            "SAVE PROFILE",
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-
                       },
-                    );
-                  },
 
-                  icon: const Icon(
-                    Icons.edit,
-                  ),
+                      icon: const Icon(Icons.edit),
 
-                  label: const Text(
-                    "Edit Profile",
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              /// LOGOUT
-              SizedBox(
-
-                width:
-                double.infinity,
-
-                height: 60,
-
-                child:
-                ElevatedButton.icon(
-
-                  style:
-                  ElevatedButton.styleFrom(
-
-                    backgroundColor:
-                    Colors.red
-                        .withOpacity(
-                      0.12,
+                      label: const Text("Edit Profile"),
                     ),
                   ),
+                  const SizedBox(height: 15),
 
-                  onPressed: () async {
-                    await FirebaseAuth.instance.signOut();
+                  SizedBox(
+                    width: double.infinity,
 
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const RoleSelectionPage(),
+                    height: 60,
+
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.withOpacity(0.12),
                       ),
-                          (route) => false,
-                    );
-                  },
 
-                  icon: const Icon(
-                    Icons.logout,
-                    color: Colors.red,
-                  ),
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
 
-                  label: const Text(
-                    "Logout",
+                        Navigator.pushAndRemoveUntil(
+                          context,
 
-                    style: TextStyle(
-                      color: Colors.red,
+                          MaterialPageRoute(
+                            builder: (_) => const RoleSelectionPage(),
+                          ),
+
+                              (route) => false,
+                        );
+                      },
+
+                      icon: const Icon(Icons.logout, color: Colors.red),
+
+                      label: const Text(
+                        "Logout",
+
+                        style: TextStyle(color: Colors.red),
+                      ),
                     ),
                   ),
-                ),
-              ),
 
-                  const SizedBox(
-                    height:100,
-                  ),
-
+                  const SizedBox(height: 100),
                 ],
               ),
             );
-              },
+          },
         ),
       ),
     );
-
   }
 
-  Widget editField(
-
+  Widget profileField(
       TextEditingController controller,
 
       String hint,
 
       IconData icon,
-      ){
 
+      bool isDark,
+      ) {
     return TextField(
+      controller: controller,
 
-      controller:controller,
+      style: TextStyle(color: isDark ? Colors.white : Colors.black),
 
-      decoration:
+      decoration: InputDecoration(
+        hintText: hint,
 
-      InputDecoration(
+        prefixIcon: Icon(icon),
 
-        hintText:hint,
+        filled: true,
 
-        prefixIcon:
-        Icon(icon),
+        fillColor: isDark ? Colors.white.withOpacity(0.08) : Colors.white,
 
-        filled:true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
 
-        border:
-
-        OutlineInputBorder(
-
-          borderRadius:
-
-          BorderRadius.circular(
-            18,
-          ),
-
-          borderSide:
-          BorderSide.none,
+          borderSide: BorderSide.none,
         ),
       ),
     );
   }
+
+  void showEditProfile(
+      DocumentSnapshot data,
+      String photoUrl,
+      ) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+
+      builder: (_) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+
+              child: Container(
+                padding: const EdgeInsets.all(24),
+
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : Colors.white.withOpacity(0.45),
+
+                  borderRadius: BorderRadius.circular(30),
+
+                  border: Border.all(color: Colors.white24),
+                ),
+
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+
+                    children: [
+                      Container(
+                        width: 95,
+
+                        height: 95,
+
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF008CFF), Color(0xFF00D4FF)],
+                          ),
+                        ),
+
+                        child: profileImage != null
+                            ? ClipOval(
+                          child: Image.file(
+                            profileImage!,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : photoUrl.toString().isNotEmpty
+                            ? ClipOval(
+                          child: Image.network(
+                            photoUrl,
+                            fit: BoxFit.cover,
+                          ),
+                        )
+                            : const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 45,
+                        ),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          final result =
+                          await FilePicker.platform.pickFiles(
+                            type: FileType.image,
+                            allowMultiple: false,
+                          );
+                          ;
+
+                          if (result == null) return;
+
+                          if (result.files.first.size > 5 * 1024 * 1024) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Maximum image size is 5 MB"),
+                              ),
+                            );
+                            return;
+                          }
+
+                          profileImage = File(result.files.first.path!);
+
+                          setState(() {});
+                        },
+
+                        icon: const Icon(Icons.photo),
+
+                        label: const Text("Choose Photo"),
+                      ),
+
+                      const SizedBox(height: 18),
+
+                      TextField(
+                        controller: emailController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          hintText: "Email",
+                          prefixIcon: const Icon(Icons.email),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      profileField(
+                        phoneController,
+
+                        "Phone",
+
+                        Icons.phone,
+
+                        isDark,
+                      ),
+
+                      const SizedBox(height: 12),
+
+
+
+                      TextField(
+                        controller: bioController,
+
+                        maxLines: 3,
+
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+
+                        decoration: InputDecoration(
+                          hintText: "About yourself",
+
+                          prefixIcon: const Icon(Icons.info),
+
+                          filled: true,
+
+                          fillColor: isDark
+                              ? Colors.white.withOpacity(0.08)
+                              : Colors.white,
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      SizedBox(
+                        width: double.infinity,
+
+                        height: 55,
+
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF008CFF),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                          ),
+                          onPressed: () async {
+                            try {
+                              String imageUrl = "";
+
+                              if (profileImage != null) {
+                                final supabase = Supabase.instance.client;
+
+                                final fileName =
+                                    "${FirebaseAuth.instance.currentUser!.uid}.jpg";
+
+                                final bytes = await profileImage!.readAsBytes();
+
+                                await supabase.storage
+                                    .from("profile-images")
+                                    .uploadBinary(
+                                  fileName,
+                                  bytes,
+                                  fileOptions: const FileOptions(
+                                    upsert: true,
+                                  ),
+                                );
+
+                                imageUrl = supabase.storage
+                                    .from("profile-images")
+                                    .getPublicUrl(fileName);
+                              }
+
+                              final Map<String, dynamic> updateData = {
+                                "email": emailController.text,
+                                "phone": phoneController.text,
+
+                                "bio": bioController.text,
+                              };
+
+                              if (imageUrl.isNotEmpty) {
+                                updateData["photoUrl"] = imageUrl;
+                              }
+
+                              final email =
+                                  FirebaseAuth.instance.currentUser!.email;
+
+                              final query =
+                              await FirebaseFirestore.instance
+                                  .collection("admins")
+                                  .where("email", isEqualTo: email)
+                                  .limit(1)
+                                  .get();
+
+                              if (query.docs.isEmpty) {
+                                throw Exception("User document not found");
+                              }
+                              await query.docs.first.reference.update(updateData);
+                              profileImage = null;
+
+                              Navigator.pop(context);
+                            } catch (e, stackTrace) {
+                              debugPrint(e.toString());
+                              debugPrint(stackTrace.toString());
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString()),
+                                ),
+                              );
+                            }
+                          },
+                          child: const Text(
+                            "SAVE PROFILE",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // KEEP ALL OTHER METHODS BELOW SAME
 
   Widget settingTile(
       BuildContext context,
@@ -1048,137 +621,75 @@ class _AdminProfilePageState
       IconData icon,
       String title,
       ) {
-
     return ListTile(
-
       onTap: () {
-
         /// DARK MODE
         if (title == "Dark Mode") {
-
-          EduMateApp.of(
-            context,
-          )?.toggleTheme();
+          EduMateApp.of(context)?.toggleTheme();
         }
-
         /// LANGUAGE
         else if (title == "Language") {
-
           showModalBottomSheet(
-
             context: context,
 
-            backgroundColor:
-            isDark
-                ? const Color(0xFF081120)
-                : Colors.white,
+            backgroundColor: isDark ? const Color(0xFF081120) : Colors.white,
 
             builder: (_) {
-
               return Padding(
-
-                padding:
-                const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20),
 
                 child: Column(
-
-                  mainAxisSize:
-                  MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
 
                   children: [
-
                     Text(
                       "Select Language",
 
                       style: TextStyle(
                         fontSize: 22,
-                        fontWeight:
-                        FontWeight.bold,
+                        fontWeight: FontWeight.bold,
 
-                        color:
-                        isDark
-                            ? Colors.white
-                            : Colors.black,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
 
                     const SizedBox(height: 20),
 
-                    languageTile(
-                      isDark,
-                      "English",
-                    ),
+                    languageTile(isDark, "English"),
 
-                    languageTile(
-                      isDark,
-                      "Hindi",
-                    ),
+                    languageTile(isDark, "Hindi"),
 
-                    languageTile(
-                      isDark,
-                      "Bengali",
-                    ),
-
-                    languageTile(
-                      isDark,
-                      "Telugu",
-                    ),
+                    languageTile(isDark, "Telugu"),
                   ],
                 ),
               );
             },
           );
         }
-
         /// NOTIFICATIONS
         else if (title == "Notifications") {
-
-          ScaffoldMessenger.of(context)
-              .showSnackBar(
-
-            const SnackBar(
-              content: Text(
-                "Notifications Opened",
-              ),
-            ),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Notifications Opened")));
         }
-
         /// PRIVACY
-        else if (title ==
-            "Privacy & Security") {
-
+        else if (title == "Privacy & Security") {
           showDialog(
-
             context: context,
 
             builder: (_) {
-
               return AlertDialog(
+                title: const Text("Privacy & Security"),
 
-                title: const Text(
-                  "Privacy & Security",
-                ),
-
-                content: const Text(
-                  "Security settings page here.",
-                ),
+                content: const Text("Security settings page here."),
 
                 actions: [
-
                   TextButton(
-
                     onPressed: () {
-
-                      Navigator.pop(
-                        context,
-                      );
+                      Navigator.pop(context);
                     },
 
-                    child:
-                    const Text(
-                      "Close",
-                    ),
+                    child: const Text("Close"),
                   ),
                 ],
               );
@@ -1188,61 +699,38 @@ class _AdminProfilePageState
       },
 
       leading: CircleAvatar(
+        backgroundColor: Colors.blue.withOpacity(0.15),
 
-        backgroundColor:
-        Colors.blue
-            .withOpacity(0.15),
-
-        child: Icon(
-          icon,
-          color: Colors.blue,
-        ),
+        child: Icon(icon, color: Colors.blue),
       ),
 
       title: Text(
         title,
 
         style: TextStyle(
-          color:
-          isDark
-              ? Colors.white
-              : Colors.black,
+          color: isDark ? Colors.white : Colors.black,
 
           fontSize: 18,
-          fontWeight:
-          FontWeight.w600,
+          fontWeight: FontWeight.w600,
         ),
       ),
 
       trailing: Icon(
         Icons.arrow_forward_ios,
 
-        color:
-        isDark
-            ? Colors.white70
-            : Colors.black54,
+        color: isDark ? Colors.white70 : Colors.black54,
 
         size: 18,
       ),
     );
   }
 
-  Widget languageTile(
-      bool isDark,
-      String language,
-      ) {
-
+  Widget languageTile(bool isDark, String language) {
     return ListTile(
-
       title: Text(
         language,
 
-        style: TextStyle(
-          color:
-          isDark
-              ? Colors.white
-              : Colors.black,
-        ),
+        style: TextStyle(color: isDark ? Colors.white : Colors.black),
       ),
 
       onTap: () {},
@@ -1250,84 +738,42 @@ class _AdminProfilePageState
   }
 
   Widget divider(bool isDark) {
-
     return Divider(
-      color:
-      isDark
-          ? Colors.white.withOpacity(
-        0.08,
-      )
-          : Colors.black12,
+      color: isDark ? Colors.white.withOpacity(0.08) : Colors.black12,
     );
   }
 
-  Widget badge(
-      String text,
-      Color color,
-      ) {
-
+  Widget badge(String text, Color color) {
     return Container(
-
-      padding:
-      const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
 
       decoration: BoxDecoration(
-        color:
-        color.withOpacity(0.15),
+        color: color.withOpacity(0.15),
 
-        borderRadius:
-        BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20),
       ),
 
       child: Text(
         text,
 
-        style: TextStyle(
-          color: color,
-          fontWeight:
-          FontWeight.bold,
-        ),
+        style: TextStyle(color: color, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget statCard(
-      BuildContext context,
-      String title,
-      String value,
-      ) {
-
-    final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
-
+  Widget statCard(bool isDark, String title, String value) {
     return glassCard(
-
-      context: context,
+      isDark: isDark,
 
       child: Padding(
-
-        padding:
-        const EdgeInsets.symmetric(
-          vertical: 18,
-        ),
+        padding: const EdgeInsets.symmetric(vertical: 18),
 
         child: Column(
-
           children: [
-
             Text(
               title,
 
-              style: TextStyle(
-                color:
-                isDark
-                    ? Colors.white70
-                    : Colors.black54,
-              ),
+              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
             ),
 
             const SizedBox(height: 10),
@@ -1337,10 +783,8 @@ class _AdminProfilePageState
 
               style: const TextStyle(
                 fontSize: 32,
-                fontWeight:
-                FontWeight.bold,
-                color:
-                Colors.blue,
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
               ),
             ),
           ],
@@ -1349,58 +793,25 @@ class _AdminProfilePageState
     );
   }
 
-  Widget glassCard({
-    required BuildContext context,
-    required Widget child,
-  }) {
-
-    final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
-
+  Widget glassCard({required Widget child, required bool isDark}) {
     return ClipRRect(
-
-      borderRadius:
-      BorderRadius.circular(30),
+      borderRadius: BorderRadius.circular(30),
 
       child: BackdropFilter(
-
-        filter:
-        ImageFilter.blur(
-          sigmaX: 20,
-          sigmaY: 20,
-        ),
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
 
         child: Container(
-
           width: double.infinity,
 
-          padding:
-          const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(20),
 
           decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.06) : Colors.white,
 
-            color:
-            isDark
-                ? Colors.white
-                .withOpacity(
-              0.06,
-            )
-                : Colors.white,
-
-            borderRadius:
-            BorderRadius.circular(
-              30,
-            ),
+            borderRadius: BorderRadius.circular(30),
 
             border: Border.all(
-              color:
-              isDark
-                  ? Colors.white
-                  .withOpacity(
-                0.08,
-              )
-                  : Colors.black12,
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.black12,
             ),
           ),
 
@@ -1410,18 +821,8 @@ class _AdminProfilePageState
     );
   }
 
-  Widget glassIcon({
-    required BuildContext context,
-    required IconData icon,
-    VoidCallback? onTap,
-  }) {
-
-    final bool isDark =
-        Theme.of(context).brightness ==
-            Brightness.dark;
-
+  Widget glassIcon({required IconData icon, VoidCallback? onTap}) {
     return GestureDetector(
-
       onTap: onTap,
 
       child: Container(
@@ -1429,23 +830,12 @@ class _AdminProfilePageState
         height: 50,
 
         decoration: BoxDecoration(
-          color:
-          isDark
-              ? Colors.white
-              .withOpacity(0.08)
-              : Colors.white,
+          color: Colors.white.withOpacity(0.08),
 
           shape: BoxShape.circle,
         ),
 
-        child: Icon(
-          icon,
-
-          color:
-          isDark
-              ? Colors.white
-              : Colors.black,
-        ),
+        child: Icon(icon, color: Colors.white),
       ),
     );
   }
