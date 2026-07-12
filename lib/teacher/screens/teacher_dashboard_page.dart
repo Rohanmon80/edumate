@@ -1,5 +1,5 @@
 import 'dart:ui';
-
+import '../../timetables/timetable_upload_page.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -556,15 +556,21 @@ class TeacherDashboardPage extends StatelessWidget {
                     ),
                   ),
 
-                  toolCard(
-
-                    context,
-
-                    "Timetable",
-
-                    Icons.calendar_month,
-
-                    Colors.indigo,
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TimetableUploadPage(),
+                        ),
+                      );
+                    },
+                    child: toolCard(
+                      context,
+                      "Timetable",
+                      Icons.calendar_month,
+                      Colors.indigo,
+                    ),
                   ),
 
                   GestureDetector(

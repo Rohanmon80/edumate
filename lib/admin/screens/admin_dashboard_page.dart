@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../main.dart';
 import '../../services/firestore_service.dart';
 
+import '../../timetables/timetable_upload_page.dart';
 import 'admin_analytics_page.dart';
 import 'admin_pending_fees_page.dart';
 
@@ -749,6 +750,23 @@ class AdminDashboardPage extends StatelessWidget {
                 16,
 
                 children:[
+
+                  moduleCard(
+                    context,
+                    "Timetable",
+                    Icons.calendar_month,
+                    Colors.indigo,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const TimetableUploadPage(
+                            isAdmin: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
 
                   moduleCard(
 

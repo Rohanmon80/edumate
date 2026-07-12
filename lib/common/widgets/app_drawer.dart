@@ -14,7 +14,7 @@ import '../screens/profile_page.dart';
 import '../screens/project_hub_page.dart';
 import '../screens/scholarship_page.dart';
 import '../screens/settings_page.dart';
-import '../screens/timetable_page.dart';
+
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -110,13 +110,6 @@ class AppDrawer extends StatelessWidget {
             "Profile",
             Icons.person,
             const ProfilePage(),
-          ),
-
-          drawerTile(
-            context,
-            "Timetable",
-            Icons.calendar_today,
-            const TimetablePage(),
           ),
 
 
