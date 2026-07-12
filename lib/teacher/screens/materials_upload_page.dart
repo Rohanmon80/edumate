@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 class TeacherMaterialUploadPage
@@ -25,6 +25,8 @@ class _TeacherMaterialUploadPageState
   final TextEditingController
   titleController =
   TextEditingController();
+  String teacherName = "";
+  String teacherId = "";
 
   String selectedYear =
       "1st Year";
@@ -40,9 +42,49 @@ class _TeacherMaterialUploadPageState
   String fileSize="";
   bool isUploading = false;
   @override
+  void initState() {
+    super.initState();
+    loadTeacherName();
+  }
+  @override
   void dispose() {
     titleController.dispose();
     super.dispose();
+  }
+  Future<void> loadTeacherName() async {
+
+    final email = FirebaseAuth.instance.currentUser?.email;
+
+    if (email == null) return;
+
+    final query = await FirebaseFirestore.instance
+        .collection("teachers")
+        .where("email", isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (query.docs.isNotEmpty) {
+
+      setState(() {
+
+        teacherName = query.docs.first["name"] ?? "Teacher";
+
+        teacherId = query.docs.first["id"] ?? "";
+
+      });
+
+    } else {
+
+      setState(() {
+
+        teacherName = "Teacher";
+
+        teacherId = "";
+
+      });
+
+    }
+
   }
 
   @override
@@ -101,6 +143,14 @@ class _TeacherMaterialUploadPageState
                 );
 
                 if(result!=null){
+                  if (result.files.first.size > 50 * 1024 * 1024) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Maximum file size is 50 MB"),
+                      ),
+                    );
+                    return;
+                  }
 
                   selectedFile=
 
@@ -292,59 +342,56 @@ class _TeacherMaterialUploadPageState
                     isUploading = true;
                   });
 
-                  final ref=
-
-                  FirebaseStorage
-                      .instance
-
-                      .ref()
-
-                      .child(
-
-                      "materials"
-
-                          "/"
-
-                          "${DateTime.now().millisecondsSinceEpoch}"
-
-                  );
-
                   try {
-                    await ref.putFile(selectedFile!);
-                    String url = await ref.getDownloadURL();
+                    final supabase = Supabase.instance.client;
+
+                    final uid = FirebaseAuth.instance.currentUser!.uid;
+
+                    final fileName =
+                        "$uid/${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split('/').last}";
+                    await supabase.storage
+                        .from('study-materials')
+                        .upload(fileName, selectedFile!);
+
+                    final String url = supabase.storage
+                        .from('study-materials')
+                        .getPublicUrl(fileName);
+
                     await FirebaseFirestore.instance
                         .collection("study_materials")
                         .add({
 
-                      "title": titleController.text,
+                      "title": titleController.text.trim(),
+                      "teacherId": teacherId,
 
-                      "teacher": "Teacher",
+                      "teacher": teacherName,
 
                       "fileUrl": url,
+                      "fileName": selectedFile!.path.split('/').last,
 
                       "fileType": fileType,
 
                       "fileSize": fileSize,
 
-                      "year": int.parse(selectedYear.substring(0, 1)),
+                      "year": selectedYear.replaceAll(" Year", ""),
 
                       "department": selectedDepartment,
 
                       "section": selectedSection,
 
                       "uploadedAt": Timestamp.now(),
+
                     });
 
                     titleController.clear();
 
-                    selectedFile = null;
-                    fileType = "FILE";
-
-                    fileSize = "";
-
                     setState(() {
+                      selectedFile = null;
+                      fileType = "FILE";
+                      fileSize = "";
                       isUploading = false;
                     });
+
 
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(

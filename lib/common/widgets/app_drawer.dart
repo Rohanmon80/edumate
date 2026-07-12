@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../screens/ai_assistant_page.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../screens/bus_tracking_page.dart';
 import '../screens/campus_map_page.dart';
 import '../screens/certificate_vault_page.dart';
@@ -18,6 +19,35 @@ import '../screens/timetable_page.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
+  Future<Map<String, dynamic>?> getUserData() async {
+
+    final email = FirebaseAuth.instance.currentUser?.email;
+
+    if (email == null) return null;
+
+    final collections = [
+      "users",
+      "teachers",
+      "admins",
+    ];
+
+    for (final collection in collections) {
+
+      final query = await FirebaseFirestore.instance
+          .collection(collection)
+          .where("email", isEqualTo: email)
+          .limit(1)
+          .get();
+
+      if (query.docs.isNotEmpty) {
+
+        return query.docs.first.data();
+
+      }
+    }
+
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,21 +60,50 @@ class AppDrawer extends StatelessWidget {
 
         children: [
 
-          const UserAccountsDrawerHeader(
+          FutureBuilder<Map<String, dynamic>?>(
+            future: getUserData(),
 
-            accountName:
-            Text("Rohan Mondal"),
+            builder: (context, snapshot) {
 
-            accountEmail:
-            Text("rohan@edumate.com"),
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const UserAccountsDrawerHeader(
+                  accountName: Text("Loading..."),
+                  accountEmail: Text(""),
+                  currentAccountPicture: CircleAvatar(
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                    ),
+                  ),
+                );
+              }
 
-            currentAccountPicture:
-            CircleAvatar(
-              child: Icon(
-                Icons.person,
-                size: 42,
-              ),
-            ),
+              final user = snapshot.data!;
+
+              final photoUrl =
+              user.containsKey("photoUrl")
+                  ? user["photoUrl"] ?? ""
+                  : "";
+
+              return UserAccountsDrawerHeader(
+
+                accountName: Text(user["name"] ?? ""),
+
+                accountEmail: Text(user["email"] ?? ""),
+
+                currentAccountPicture: CircleAvatar(
+
+                  backgroundImage:
+                  photoUrl.toString().isNotEmpty
+                      ? NetworkImage(photoUrl)
+                      : null,
+
+                  child:
+                  photoUrl.toString().isEmpty
+                      ? const Icon(Icons.person, size: 42)
+                      : null,
+                ),
+              );
+            },
           ),
 
           drawerTile(
