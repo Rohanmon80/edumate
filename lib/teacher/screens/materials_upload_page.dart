@@ -69,7 +69,7 @@ class _TeacherMaterialUploadPageState
 
         teacherName = query.docs.first["name"] ?? "Teacher";
 
-        teacherId = query.docs.first["id"] ?? "";
+        teacherId = FirebaseAuth.instance.currentUser!.uid;
 
       });
 
@@ -132,14 +132,7 @@ class _TeacherMaterialUploadPageState
                 final result=
 
                 await FilePicker.platform.pickFiles(
-                  type: FileType.custom,
-                  allowedExtensions: [
-                    'pdf',
-                    'ppt',
-                    'pptx',
-                    'doc',
-                    'docx',
-                  ],
+                  type: FileType.any,
                 );
 
                 if(result!=null){

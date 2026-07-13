@@ -5,8 +5,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../main.dart';
 
-class MaterialsPage extends StatelessWidget {
+class MaterialsPage extends StatefulWidget {
   const MaterialsPage({super.key});
+
+  @override
+  State<MaterialsPage> createState() => _MaterialsPageState();
+}
+
+class _MaterialsPageState extends State<MaterialsPage> {
+
+  final TextEditingController searchController =
+  TextEditingController();
+
+  String searchText = "";
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -149,34 +166,31 @@ class MaterialsPage extends StatelessWidget {
                     ),
 
                     child: TextField(
+                      controller: searchController,
+
+                      onChanged: (value) {
+                        setState(() {
+                          searchText = value.trim().toLowerCase();
+                        });
+                      },
 
                       style: TextStyle(
-                        color:
-                        isDark
-                            ? Colors.white
-                            : Colors.black,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
 
                       decoration: InputDecoration(
-
                         border: InputBorder.none,
-
-                        hintText:
-                        "Search materials...",
-
+                        hintText: "Search materials...",
                         hintStyle: TextStyle(
-                          color:
-                          isDark
-                              ? Colors.white54
-                              : Colors.grey,
+                          color: isDark ? Colors.white54 : Colors.grey,
                         ),
-
                         icon: const Icon(
                           Icons.search,
                           color: Colors.blue,
                         ),
                       ),
                     ),
+
                   ),
                 ),
               ),
@@ -258,36 +272,11 @@ class MaterialsPage extends StatelessWidget {
                     FirebaseFirestore
                         .instance
 
-                        .collection(
-                        "study_materials")
-
-                        .where(
-                        "year",
-
-                        isEqualTo:
-
-                        user[
-                        "year"
-                        ])
-
-                        .where(
-                        "department",
-
-                        isEqualTo:
-
-                        user[
-                        "department"
-                        ])
-
-                        .where(
-                        "section",
-
-                        isEqualTo:
-
-                        user[
-                        "section"
-                        ])
-
+                        .collection("study_materials")
+                        .where("year", isEqualTo: user["year"])
+                        .where("department", isEqualTo: user["department"])
+                        .where("section", isEqualTo: user["section"])
+                        .orderBy("uploadedAt", descending: true)
                         .snapshots(),
 
                     builder:
@@ -304,19 +293,45 @@ class MaterialsPage extends StatelessWidget {
                         );
                       }
 
-                      final docs=
+                      final docs = snapshot.data!.docs.where((doc) {
 
-                          snapshot
-                              .data!
-                              .docs;
+                        final data = doc.data() as Map<String, dynamic>;
+
+                        final title =
+                        (data["title"] ?? "")
+                            .toString()
+                            .toLowerCase();
+
+                        final teacher =
+                        (data["teacher"] ?? "")
+                            .toString()
+                            .toLowerCase();
+
+                        return title.contains(searchText) ||
+                            teacher.contains(searchText);
+
+                      }).toList();
 
                       if(
                       docs.isEmpty
-                      ){
-
-                        return const Text(
-
-                          "No materials available",
+                      ) {
+                        return Center(
+                          child: Column(
+                            children: const [
+                              Icon(
+                                Icons.folder_open,
+                                size: 70,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 15),
+                              Text(
+                                "No Materials Available",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       }
 
@@ -335,6 +350,58 @@ class MaterialsPage extends StatelessWidget {
                             as Map<
                                 String,
                                 dynamic>;
+                            String uploadDate = "";
+
+                            if (m["uploadedAt"] is Timestamp) {
+
+                              final date =
+                              (m["uploadedAt"] as Timestamp)
+                                  .toDate();
+
+                              uploadDate =
+                              "${date.day}/${date.month}/${date.year}";
+                            }
+                            final type =
+                            (m["fileType"] ?? "FILE")
+                                .toString()
+                                .toUpperCase();
+
+                            IconData icon;
+
+                            switch (type) {
+                              case "PDF":
+                                icon = Icons.picture_as_pdf;
+                                break;
+
+                              case "PPT":
+                              case "PPTX":
+                                icon = Icons.slideshow;
+                                break;
+
+                              case "DOC":
+                              case "DOCX":
+                                icon = Icons.description;
+                                break;
+
+                              case "PNG":
+                              case "JPG":
+                              case "JPEG":
+                                icon = Icons.image;
+                                break;
+
+                              case "XLS":
+                              case "XLSX":
+                                icon = Icons.table_chart;
+                                break;
+
+                              case "ZIP":
+                              case "RAR":
+                                icon = Icons.folder_zip;
+                                break;
+
+                              default:
+                                icon = Icons.insert_drive_file;
+                            }
 
                             return materialCard(
                               context,
@@ -348,31 +415,25 @@ class MaterialsPage extends StatelessWidget {
                                   ?? "Material",
 
                               subtitle:
+                              "Uploaded by ${m["teacher"] ?? "Teacher"}\n$uploadDate",
 
-                              "Uploaded by ${m["teacher"]}",
-
-                              type:
-
-                              m["fileType"]
-                                  ?? "FILE",
+                              type:type,
 
                               size:
 
                               m["fileSize"]
                                   ?.toString()
 
-                                  ?? "",
+                                  ?? "Unknown Size",
 
                               color:
                               Colors.blue,
 
-                              icon:
-                              Icons.description,
+
+                              icon: icon,
 
                               fileUrl:
-
-                              m["fileUrl"]
-                                  ?? "",
+                              m["fileUrl"] ?? "",
                             );
                           },
                         ).toList(),
@@ -383,7 +444,8 @@ class MaterialsPage extends StatelessWidget {
               ),
 
               const SizedBox(height: 30),
-            ],
+
+            ]
           ),
         ),
       ),
