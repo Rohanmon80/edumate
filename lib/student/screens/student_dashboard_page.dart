@@ -1,9 +1,8 @@
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import '../../timetables/timetable_page.dart';
 import '../../common/widgets/app_drawer.dart';
 import '../../main.dart';
 import 'attendance_page.dart';
@@ -658,6 +657,14 @@ class StudentDashboardPage extends StatelessWidget {
                         color: Colors.blue,
                         isDark: isDark,
                         page: const ResultsPage(),
+                      ),
+                      quickCard(
+                        context: context,
+                        title: "Timetable",
+                        icon: Icons.calendar_month,
+                        color: Colors.orange,
+                        isDark: isDark,
+                        page: const TimetablePage(),
                       ),
 
 
