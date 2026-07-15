@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'materials_upload_page.dart';
 import 'teacher_dashboard_page.dart';
 import 'teacher_marks_page.dart';
@@ -39,13 +38,16 @@ class _TeacherMainNavigationState
 
   @override
   Widget build(BuildContext context) {
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
 
       extendBody: true,
 
-      backgroundColor:
-      const Color(0xFF081120),
+      backgroundColor: isDark
+          ? const Color(0xFF081120)
+          : const Color(0xFFF6F8FC),
 
       body: Stack(
 
@@ -65,24 +67,31 @@ class _TeacherMainNavigationState
 
               padding:
               const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 12,
+                horizontal: 8,
+                vertical: 10,
               ),
 
               decoration: BoxDecoration(
 
-                color:
-                Colors.white
-                    .withOpacity(0.08),
+                color: isDark
+                    ? const Color(0xFF15263D)
+                    : Colors.white,
 
-                borderRadius:
-                BorderRadius.circular(32),
+                borderRadius: BorderRadius.circular(22),
 
                 border: Border.all(
-                  color:
-                  Colors.white
-                      .withOpacity(0.08),
+                  color: isDark
+                      ? Colors.white12
+                      : Colors.grey.shade300,
                 ),
+
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
 
               child: Row(
@@ -91,6 +100,7 @@ class _TeacherMainNavigationState
                 MainAxisAlignment.spaceAround,
 
                 children: [
+
 
                   navItem(
                     Icons.home,
@@ -135,6 +145,8 @@ class _TeacherMainNavigationState
       String label,
       int index,
       ) {
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     final bool isSelected =
         currentIndex == index;
@@ -164,10 +176,10 @@ class _TeacherMainNavigationState
 
         decoration: BoxDecoration(
 
-          color:
-          isSelected
-              ? Colors.blue
-              .withOpacity(0.18)
+          color: isSelected
+              ? const Color(0xFF1976D2).withOpacity(
+            isDark ? 0.25 : 0.12,
+          )
               : Colors.transparent,
 
           borderRadius:
@@ -186,10 +198,11 @@ class _TeacherMainNavigationState
 
               size: 24,
 
-              color:
-              isSelected
-                  ? Colors.blue
-                  : Colors.white70,
+              color: isSelected
+                  ? const Color(0xFF1976D2)
+                  : isDark
+                  ? Colors.white70
+                  : Colors.black54,
             ),
 
             const SizedBox(height: 4),
@@ -201,10 +214,11 @@ class _TeacherMainNavigationState
 
                 fontSize: 12,
 
-                color:
-                isSelected
-                    ? Colors.blue
-                    : Colors.white70,
+                color: isSelected
+                    ? const Color(0xFF1976D2)
+                    : isDark
+                    ? Colors.white70
+                    : Colors.black54,
               ),
             ),
           ],

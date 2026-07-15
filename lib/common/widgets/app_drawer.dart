@@ -10,7 +10,7 @@ import '../screens/coding_contest_page.dart';
 import '../screens/events_page.dart';
 import '../screens/library_page.dart';
 import '../screens/placement_page.dart';
-import '../screens/profile_page.dart';
+
 import '../screens/project_hub_page.dart';
 import '../screens/scholarship_page.dart';
 import '../screens/settings_page.dart';
@@ -105,12 +105,7 @@ class AppDrawer extends StatelessWidget {
             },
           ),
 
-          drawerTile(
-            context,
-            "Profile",
-            Icons.person,
-            const ProfilePage(),
-          ),
+
 
 
 

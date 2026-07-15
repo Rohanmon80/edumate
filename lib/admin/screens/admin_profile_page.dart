@@ -363,6 +363,10 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
       context: context,
 
       builder: (_) {
+        return StatefulBuilder(
+builder: (context, dialogSetState) {
+
+
         return Dialog(
           backgroundColor: Colors.transparent,
 
@@ -446,9 +450,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                             return;
                           }
 
-                          profileImage = File(result.files.first.path!);
-
-                          setState(() {});
+                          dialogSetState(() {
+                            profileImage = File(result.files.first.path!);
+                          });
                         },
 
                         icon: const Icon(Icons.photo),
@@ -550,6 +554,9 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                   fileOptions: const FileOptions(
                                     upsert: true,
                                   ),
+                                )
+                                    .timeout(
+                                  const Duration(seconds: 60),
                                 );
 
                                 imageUrl = supabase.storage
@@ -582,9 +589,14 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
                                 throw Exception("User document not found");
                               }
                               await query.docs.first.reference.update(updateData);
-                              profileImage = null;
+
+                              if (!mounted) return;
 
                               Navigator.pop(context);
+
+                              setState(() {
+                                profileImage = null;
+                              });
                             } catch (e, stackTrace) {
                               debugPrint(e.toString());
                               debugPrint(stackTrace.toString());
@@ -608,6 +620,8 @@ class _AdminProfilePageState extends State<AdminProfilePage> {
               ),
             ),
           ),
+        );
+},
         );
       },
     );

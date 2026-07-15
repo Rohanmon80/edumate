@@ -1,428 +1,833 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:file_picker/file_picker.dart';
-
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-class TeacherMaterialUploadPage
-    extends StatefulWidget {
+import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-  const TeacherMaterialUploadPage({
-    super.key,
-  });
+class TeacherMaterialUploadPage extends StatefulWidget {
+  const TeacherMaterialUploadPage({super.key});
 
   @override
-  State<TeacherMaterialUploadPage>
-  createState() =>
+  State<TeacherMaterialUploadPage> createState() =>
       _TeacherMaterialUploadPageState();
 }
 
 class _TeacherMaterialUploadPageState
     extends State<TeacherMaterialUploadPage> {
 
-  final TextEditingController
-  titleController =
-  TextEditingController();
-  String teacherName = "";
-  String teacherId = "";
+//-----------------------------------------
+// Controllers
+//-----------------------------------------
 
-  String selectedYear =
-      "1st Year";
+final TextEditingController titleController =
+TextEditingController();
 
-  String selectedDepartment =
-      "CSE";
+//-----------------------------------------
+// Firebase
+//-----------------------------------------
 
-  String selectedSection = "A";
-  File? selectedFile;
+final FirebaseFirestore firestore =
+FirebaseFirestore.instance;
 
-  String fileType="FILE";
+final FirebaseAuth auth =
+FirebaseAuth.instance;
 
-  String fileSize="";
-  bool isUploading = false;
-  @override
-  void initState() {
-    super.initState();
-    loadTeacherName();
+final SupabaseClient supabase =
+Supabase.instance.client;
+
+//-----------------------------------------
+// Teacher
+//-----------------------------------------
+
+String teacherName = "";
+
+String teacherId = "";
+
+String teacherDepartment = "";
+
+//-----------------------------------------
+// Dropdown Data (Dynamic)
+//-----------------------------------------
+
+List<String> years = [];
+
+List<String> departments = [];
+
+List<String> sections = [];
+
+//-----------------------------------------
+// Selected Values
+//-----------------------------------------
+
+String? selectedYear;
+
+String? selectedDepartment;
+
+String? selectedSection;
+
+//-----------------------------------------
+// File
+//-----------------------------------------
+
+File? selectedFile;
+
+String fileType = "FILE";
+
+String fileSize = "";
+
+//-----------------------------------------
+// Loading
+//-----------------------------------------
+
+bool isUploading = false;
+
+bool isLoading = true;
+
+//-----------------------------------------
+// Init
+//-----------------------------------------
+
+@override
+void initState() {
+super.initState();
+
+initializePage();
+}
+
+//-----------------------------------------
+// Dispose
+//-----------------------------------------
+
+@override
+void dispose() {
+titleController.dispose();
+super.dispose();
+}
+
+//-----------------------------------------
+// Initialize
+//-----------------------------------------
+
+Future<void> initializePage() async {
+
+await loadTeacher();
+
+await loadAcademicData();
+
+if (mounted) {
+setState(() {
+isLoading = false;
+});
+}
+}
+//-----------------------------------------
+// Load Teacher Details
+//-----------------------------------------
+
+Future<void> loadTeacher() async {
+
+try {
+  final user = auth.currentUser;
+
+  if (user == null) {
+    throw Exception("Teacher not logged in");
   }
-  @override
-  void dispose() {
-    titleController.dispose();
-    super.dispose();
-  }
-  Future<void> loadTeacherName() async {
 
-    final email = FirebaseAuth.instance.currentUser?.email;
+  final doc = await firestore
+      .collection("teachers")
+      .doc(user.uid)
+      .get();
 
-    if (email == null) return;
-
-    final query = await FirebaseFirestore.instance
-        .collection("teachers")
-        .where("email", isEqualTo: email)
-        .limit(1)
-        .get();
-
-    if (query.docs.isNotEmpty) {
-
-      setState(() {
-
-        teacherName = query.docs.first["name"] ?? "Teacher";
-
-        teacherId = FirebaseAuth.instance.currentUser!.uid;
-
-      });
-
-    } else {
-
-      setState(() {
-
-        teacherName = "Teacher";
-
-        teacherId = "";
-
-      });
-
-    }
-
+  if (!doc.exists) {
+    throw Exception("Teacher profile not found");
   }
 
-  @override
-  Widget build(BuildContext context) {
+  final data = doc.data()!;
 
-    return Scaffold(
 
-      appBar: AppBar(
-        title:
-        const Text(
-          "Upload Materials",
-        ),
-      ),
+  teacherName = data["name"] ?? "Teacher";
 
-      body: SingleChildScrollView(
+  teacherId = user.uid;
 
-        padding:
-        const EdgeInsets.all(20),
+  teacherDepartment =
+      data["department"] ?? "";
 
-        child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
 
-          children: [
+} catch (e) {
 
-            TextField(
-              controller:
-              titleController,
+if (!mounted) return;
 
-              decoration:
-              const InputDecoration(
-                labelText:
-                "Material Title",
-                border:
-                OutlineInputBorder(),
-              ),
-            ),
+ScaffoldMessenger.of(context).showSnackBar(
+SnackBar(
+content: Text(e.toString()),
+),
+);
+}
+}
 
-            const SizedBox(height: 20),
+//-----------------------------------------
+// Load Academic Settings
+//-----------------------------------------
 
-            ElevatedButton.icon(
+Future<void> loadAcademicData() async {
 
-              onPressed: () async {
+try {
+  final doc = await firestore
+      .collection("settings")
+      .doc("academic")
+      .get();
 
-                final result=
+  if (!doc.exists) {
+    throw Exception(
+      "Academic settings not found.",
+    );
+  }
 
-                await FilePicker.platform.pickFiles(
-                  type: FileType.any,
-                );
+  final data = doc.data()!;
 
-                if(result!=null){
-                  if (result.files.first.size > 50 * 1024 * 1024) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Maximum file size is 50 MB"),
-                      ),
-                    );
-                    return;
-                  }
+  years = List<String>.from(
+    data["years"] ?? [],
+  );
 
-                  selectedFile=
+  departments = List<String>.from(
+    data["departments"] ?? [],
+  );
 
-                      File(
-                        result.files
-                            .first.path!,
-                      );
+  sections = List<String>.from(
+    data["sections"] ?? [],
+  );
 
-                  fileType=
+//---------------------------------------
+// Default Selected Values
+//---------------------------------------
 
-                      result.files
-                          .first.extension
-                          ?.toUpperCase()
+  if (years.isNotEmpty) {
+    selectedYear = years.first;
+  }
 
-                          ?? "FILE";
+//---------------------------------------
+// Teacher Department
+//---------------------------------------
 
-                  fileSize=
+  if (teacherDepartment.isNotEmpty &&
+      departments.contains(
+        teacherDepartment,
+      )) {
+    selectedDepartment =
+        teacherDepartment;
+  } else if (departments.isNotEmpty) {
+    selectedDepartment =
+        departments.first;
+  }
 
-                  "${(result.files.first.size/1024/1024).toStringAsFixed(1)} MB";
+//---------------------------------------
+// Section
+//---------------------------------------
 
-                  setState(() {});
-                }
-              },
+  if (sections.isNotEmpty) {
+    selectedSection =
+        sections.first;
+  }
 
-              icon: const Icon(
-                Icons.upload_file,
-              ),
+} catch (e) {
 
-              label:
+if (!mounted) return;
 
-              Text(
+ScaffoldMessenger.of(context).showSnackBar(
 
-                selectedFile==null
+SnackBar(
+content: Text(
+e.toString(),
+),
+),
+);
+}
+}
 
-                    ?
+//-----------------------------------------
+// Pick File
+//-----------------------------------------
 
-                "Upload PDF / PPT"
+Future<void> pickFile() async {
 
-                    :
+final result =
+await FilePicker.platform.pickFiles(
+type: FileType.any,
+);
 
-                selectedFile!
-                    .path
-                    .split("/")
-                    .last,
-              ),
-            ),
-
-            const SizedBox(height: 25),
-
-            DropdownButton<String>(
-
-              value: selectedYear,
-
-              isExpanded: true,
-
-              items: [
-
-                "1st Year",
-                "2nd Year",
-                "3rd Year",
-                "4th Year"
-              ]
-                  .map(
-                    (year) =>
-                    DropdownMenuItem(
-                      value: year,
-                      child:
-                      Text(year),
-                    ),
-              )
-                  .toList(),
+if (result == null) return;
 
-              onChanged: (value) {
+if (result.files.first.size >
+50 * 1024 * 1024) {
 
-                setState(() {
+if (!mounted) return;
 
-                  selectedYear =
-                  value!;
-                });
-              },
-            ),
-
-            const SizedBox(height: 20),
-
-            DropdownButton<String>(
-
-              value:
-              selectedDepartment,
-
-              isExpanded: true,
-
-              items: [
-
-                "CSE",
-                "AIML",
-                "CSM",
-                "ECE",
-                "EEE"
-              ]
-                  .map(
-                    (dept) =>
-                    DropdownMenuItem(
-                      value: dept,
-                      child:
-                      Text(dept),
-                    ),
-              )
-                  .toList(),
-
-              onChanged: (value) {
-
-                setState(() {
-
-                  selectedDepartment =
-                  value!;
-                });
-              },
-            ),
+ScaffoldMessenger.of(context).showSnackBar(
 
-            const SizedBox(height: 20),
+const SnackBar(
+content: Text(
+"Maximum file size is 50 MB",
+),
+),
+);
 
-            DropdownButton<String>(
+return;
+}
 
-              value:
-              selectedSection,
+setState(() {
 
-              isExpanded: true,
+selectedFile = File(
+result.files.first.path!,
+);
 
-              items: [
-                "A",
-                "B",
-                "C",
-                "D"
-              ]
-                  .map(
-                    (section) =>
-                    DropdownMenuItem(
-                      value:
-                      section,
-                      child:
-                      Text(section),
-                    ),
-              )
-                  .toList(),
+fileType =
+result.files.first.extension
+?.toUpperCase() ??
+"FILE";
 
-              onChanged: (value) {
+fileSize =
+"${(result.files.first.size / 1024 / 1024).toStringAsFixed(2)} MB";
+});
+}
 
-                setState(() {
+//-----------------------------------------
+// Remove File
+//-----------------------------------------
 
-                  selectedSection =
-                  value!;
-                });
-              },
-            ),
+void removeFile() {
 
-            const SizedBox(height: 40),
+setState(() {
 
-            SizedBox(
+selectedFile = null;
 
-              width:
-              double.infinity,
+fileType = "FILE";
 
-              height: 55,
+fileSize = "";
+});
+}
+//-----------------------------------------
+// Upload Material
+//-----------------------------------------
 
-              child: ElevatedButton(
-
-                onPressed: () async {
-
-                  if (titleController.text.trim().isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Please enter material title"),
-                      ),
-                    );
-                    return;
-                  }
-
-                  if (selectedFile == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Please select a file"),
-                      ),
-                    );
-                    return;
-                  }
-                  if (isUploading) return;
-
-                  setState(() {
-                    isUploading = true;
-                  });
-
-                  try {
-                    final supabase = Supabase.instance.client;
-
-                    final uid = FirebaseAuth.instance.currentUser!.uid;
-
-                    final fileName =
-                        "$uid/${DateTime.now().millisecondsSinceEpoch}_${selectedFile!.path.split('/').last}";
-                    await supabase.storage
-                        .from('study-materials')
-                        .upload(fileName, selectedFile!);
-
-                    final String url = supabase.storage
-                        .from('study-materials')
-                        .getPublicUrl(fileName);
-
-                    await FirebaseFirestore.instance
-                        .collection("study_materials")
-                        .add({
-
-                      "title": titleController.text.trim(),
-                      "teacherId": teacherId,
-
-                      "teacher": teacherName,
-
-                      "fileUrl": url,
-                      "fileName": selectedFile!.path.split('/').last,
-
-                      "fileType": fileType,
-
-                      "fileSize": fileSize,
-
-                      "year": selectedYear.replaceAll(" Year", ""),
-
-                      "department": selectedDepartment,
-
-                      "section": selectedSection,
-
-                      "uploadedAt": Timestamp.now(),
-
-                    });
-
-                    titleController.clear();
-
-                    setState(() {
-                      selectedFile = null;
-                      fileType = "FILE";
-                      fileSize = "";
-                      isUploading = false;
-                    });
-
-
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            "Material Uploaded Successfully",
-                          ),
-                        ),
-                      );
-                    }
-
-                  } catch (e) {
-                    setState(() {
-                      isUploading = false;
-                    });
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(e.toString()),
-                      ),
-                    );
-                  };
-
-
-                },
-
-                child: isUploading
-                    ? const CircularProgressIndicator(
-                  color: Colors.white,
-                )
-                    : const Text(
-                  "Upload Material",
-                ),
-              ),
-            ),
-          ],
+Future<void> uploadMaterial() async {
+  if (titleController.text
+      .trim()
+      .isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "Please enter material title",
         ),
       ),
     );
+
+    return;
   }
+
+  if (selectedFile == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "Please choose a file",
+        ),
+      ),
+    );
+
+    return;
+  }
+
+  if (selectedYear == null ||
+      selectedDepartment == null ||
+      selectedSection == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "Please select Year, Department and Section",
+        ),
+      ),
+    );
+
+    return;
+  }
+
+  if (isUploading) return;
+
+  setState(() {
+    isUploading = true;
+  });
+  try {
+//-----------------------------------
+// Upload to Supabase
+//-----------------------------------
+
+    final storagePath =
+        "$teacherId/${DateTime
+        .now()
+        .millisecondsSinceEpoch}_${selectedFile!
+        .path
+        .split('/')
+        .last}";
+
+    final bytes = await selectedFile!.readAsBytes();
+
+    await supabase.storage
+        .from("study-materials")
+        .uploadBinary(
+      storagePath,
+      bytes,
+      fileOptions: const FileOptions(upsert: true),
+    )
+        .timeout(
+      const Duration(seconds: 60),
+    );
+
+    final fileUrl = supabase.storage
+        .from("study-materials")
+        .getPublicUrl(storagePath);
+
+//-----------------------------------
+// Save Firestore
+//-----------------------------------
+
+    await firestore.collection("study_materials").add({
+
+      "title": titleController.text.trim(),
+
+      "teacher": teacherName,
+
+      "teacherId": teacherId,
+
+      "department": selectedDepartment,
+      "departmentLower":
+      selectedDepartment!.toLowerCase(),
+
+      "year": selectedYear,
+
+      "section": selectedSection,
+
+      "fileUrl": fileUrl,
+
+      "fileName": selectedFile!
+          .path
+          .split("/")
+          .last,
+      "extension": selectedFile!
+          .path
+          .split(".")
+          .last
+          .toLowerCase(),
+
+      "fileType": fileType,
+
+      "fileSize": fileSize,
+
+      "uploadedAt": FieldValue.serverTimestamp(),
+      "uploadedBy": teacherName,
+      "teacherUid": teacherId,
+    });
+
+    if (!mounted) return;
+
+    showSuccess("Material Uploaded Successfully");
+
+  } catch (e, stackTrace) {
+
+    debugPrint(e.toString());
+    debugPrint(stackTrace.toString());
+
+    showError(e.toString());
+
+  } finally {
+
+    if (mounted) {
+      setState(() {
+        isUploading = false;
+      });
+    }
+  }
+}
+//-----------------------------------------
+// Build UI
+//-----------------------------------------
+
+@override
+Widget build(BuildContext context) {
+
+return Scaffold(
+
+appBar: AppBar(
+title: const Text("Upload Materials"),
+centerTitle: true,
+),
+
+body: isLoading
+
+? const Center(
+child: CircularProgressIndicator(),
+)
+
+: Stack(
+
+children: [
+
+AbsorbPointer(
+
+absorbing: isUploading,
+
+child: SingleChildScrollView(
+
+padding: const EdgeInsets.all(20),
+
+child: Column(
+
+crossAxisAlignment:
+CrossAxisAlignment.start,
+
+children: [
+
+//--------------------------------
+// Teacher Card
+//--------------------------------
+
+Card(
+
+elevation: 3,
+
+shape: RoundedRectangleBorder(
+borderRadius:
+BorderRadius.circular(18),
+),
+
+child: Padding(
+
+padding:
+const EdgeInsets.all(18),
+
+child: Row(
+
+children: [
+
+const CircleAvatar(
+radius: 28,
+child: Icon(
+Icons.person,
+size: 30,
+),
+),
+
+const SizedBox(width: 16),
+
+Expanded(
+
+child: Column(
+
+crossAxisAlignment:
+CrossAxisAlignment.start,
+
+children: [
+
+Text(
+teacherName,
+style: const TextStyle(
+fontSize: 20,
+fontWeight:
+FontWeight.bold,
+),
+),
+
+const SizedBox(height: 4),
+
+Text(teacherDepartment),
+],
+),
+),
+],
+),
+),
+),
+
+const SizedBox(height: 25),
+
+//--------------------------------
+// Material Title
+//--------------------------------
+
+TextField(
+
+controller: titleController,
+
+decoration:
+const InputDecoration(
+
+labelText:
+"Material Title",
+
+border:
+OutlineInputBorder(),
+),
+),
+
+const SizedBox(height: 20),
+
+//--------------------------------
+// Choose File
+//--------------------------------
+
+SizedBox(
+
+width: double.infinity,
+
+child: ElevatedButton.icon(
+
+onPressed: pickFile,
+
+icon: const Icon(
+Icons.upload_file,
+),
+
+label: const Text(
+"Choose File",
+),
+),
+),
+
+const SizedBox(height: 20),
+//--------------------------------
+// Selected File
+//--------------------------------
+
+if (selectedFile != null)
+Card(
+elevation: 2,
+shape: RoundedRectangleBorder(
+borderRadius: BorderRadius.circular(15),
+),
+child: ListTile(
+leading: Icon(
+fileType == "PDF"
+? Icons.picture_as_pdf
+: fileType == "PPT" ||
+fileType == "PPTX"
+? Icons.slideshow
+: fileType == "DOC" ||
+fileType == "DOCX"
+? Icons.description
+: fileType == "PNG" ||
+fileType == "JPG" ||
+fileType == "JPEG"
+? Icons.image
+: Icons.insert_drive_file,
+color: Colors.blue,
+),
+
+title: Text(
+selectedFile!.path.split("/").last,
+maxLines: 1,
+overflow: TextOverflow.ellipsis,
+),
+
+subtitle: Text(
+"$fileType • $fileSize",
+),
+
+trailing: IconButton(
+icon: const Icon(
+Icons.close,
+color: Colors.red,
+),
+onPressed: removeFile,
+),
+),
+),
+
+const SizedBox(height: 25),
+
+//--------------------------------
+// Year
+//--------------------------------
+
+DropdownButtonFormField<String>(
+value: selectedYear,
+decoration: const InputDecoration(
+labelText: "Year",
+border: OutlineInputBorder(),
+),
+items: years
+.map(
+(year) => DropdownMenuItem(
+value: year,
+child: Text(year),
+),
+)
+.toList(),
+onChanged: (value) {
+setState(() {
+selectedYear = value;
+});
+},
+),
+
+const SizedBox(height: 20),
+
+//--------------------------------
+// Department
+//--------------------------------
+
+DropdownButtonFormField<String>(
+value: selectedDepartment,
+decoration: const InputDecoration(
+labelText: "Department",
+border: OutlineInputBorder(),
+),
+items: departments
+.map(
+(department) => DropdownMenuItem(
+value: department,
+child: Text(department),
+),
+)
+.toList(),
+onChanged: (value) {
+setState(() {
+selectedDepartment = value;
+});
+},
+),
+
+const SizedBox(height: 20),
+
+//--------------------------------
+// Section
+//--------------------------------
+
+DropdownButtonFormField<String>(
+value: selectedSection,
+decoration: const InputDecoration(
+labelText: "Section",
+border: OutlineInputBorder(),
+),
+items: sections
+.map(
+(section) => DropdownMenuItem(
+value: section,
+child: Text(section),
+),
+)
+.toList(),
+onChanged: (value) {
+setState(() {
+selectedSection = value;
+});
+},
+),
+
+const SizedBox(height: 30),
+
+//--------------------------------
+// Upload Button
+//--------------------------------
+
+SizedBox(
+width: double.infinity,
+height: 55,
+child: ElevatedButton(
+  onPressed: isUploading
+      ? null
+      : () async {
+    FocusScope.of(context).unfocus();
+    await uploadMaterial();
+  },
+
+child: isUploading
+
+? const Row(
+mainAxisAlignment:
+MainAxisAlignment.center,
+children: [
+
+SizedBox(
+width: 22,
+height: 22,
+child:
+CircularProgressIndicator(
+strokeWidth: 2,
+color: Colors.white,
+),
+),
+
+SizedBox(width: 15),
+
+Text(
+"Uploading...",
+style: TextStyle(
+color: Colors.white,
+),
+),
+],
+)
+
+: const Text(
+"Upload Material",
+),
+),
+),
+
+const SizedBox(height: 40),
+],
+),
+),
+),
+
+  //--------------------------------
+  // Loading Overlay
+  //--------------------------------
+
+  if (isUploading)
+    Container(
+      color: Colors.black38,
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    ),
+],
+),
+);
+}
+
+//-----------------------------------------
+// Success Snackbar
+//-----------------------------------------
+
+  void showSuccess(String message) {
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
+    );
+  }
+
+//-----------------------------------------
+// Error Snackbar
+//-----------------------------------------
+
+  void showError(String message) {
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        content: Text(message),
+      ),
+    );
+  }
+
 }

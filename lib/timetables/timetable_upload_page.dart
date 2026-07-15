@@ -138,8 +138,9 @@ class _TimetableUploadPageState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor:
-        error ? Colors.red : Colors.green,
+        backgroundColor: error
+            ? Colors.red
+            : const Color(0xFF1565C0),
       ),
     );
   }
@@ -206,6 +207,7 @@ class _TimetableUploadPageState
         setState(() {
           isLoadingTeacher = false;
         });
+        await searchTimetable();
       }
     } catch (e) {
       if (mounted) {
@@ -599,12 +601,18 @@ class _TimetableUploadPageState
 
 @override
 Widget build(BuildContext context) {
+  final bool isDark =
+      Theme.of(context).brightness == Brightness.dark;
 return Scaffold(
-backgroundColor: const Color(0xffF4F8FC),
+  backgroundColor: isDark
+      ? const Color(0xFF081120)
+      : const Color(0xFFF6F8FC),
 
 appBar: AppBar(
 elevation: 0,
-backgroundColor: Colors.teal.shade700,
+  backgroundColor: isDark
+      ? const Color(0xFF0D47A1)
+      : const Color(0xFF1565C0),
 foregroundColor: Colors.white,
 centerTitle: true,
   title: Text(
@@ -627,164 +635,11 @@ CrossAxisAlignment.start,
 
 children: [
 
-//----------------------------------
-// Teacher Card
-//----------------------------------
-
-glassCard(
-
-child: Padding(
-
-padding:
-const EdgeInsets.all(20),
-
-child: Row(
-
-children: [
-
-CircleAvatar(
-
-radius: 35,
-
-backgroundColor:
-Colors.teal,
-
-child: const Icon(
-Icons.person,
-color: Colors.white,
-size: 35,
-),
-),
-
-const SizedBox(width: 18),
-
-Expanded(
-
-child: Column(
-
-crossAxisAlignment:
-CrossAxisAlignment.start,
-
-children: [
-
-Text(
-teacherName,
-
-style:
-const TextStyle(
-fontSize: 22,
-fontWeight:
-FontWeight.bold,
-),
-),
-
-const SizedBox(height: 6),
-
-  Text(
-    widget.isAdmin
-        ? "Admin ID : $teacherId"
-        : "Teacher ID : $teacherId",
-  ),
-
-  Text(
-    widget.isAdmin
-        ? "Role : Administrator"
-        : "Department : $teacherDepartment",
-  ),
-],
-),
-),
-],
-),
-),
-),
-
-const SizedBox(height: 25),
-
-//----------------------------------
-// Search Card
-//----------------------------------
-
-glassCard(
-child: Padding(
-padding: const EdgeInsets.all(20),
-
-child: Column(
-crossAxisAlignment:
-CrossAxisAlignment.start,
-
-children: [
-
-const Text(
-"Search Timetable",
-style: TextStyle(
-fontSize: 22,
-fontWeight:
-FontWeight.bold,
-),
-),
-
-const SizedBox(height: 20),
-
-SizedBox(
-width: double.infinity,
-
-height: 55,
-
-child: ElevatedButton.icon(
-
-onPressed:
-isSearching
-? null
-: searchTimetable,
-
-icon:
-isSearching
-? const SizedBox(
-width: 20,
-height: 20,
-child:
-CircularProgressIndicator(
-color:
-Colors.white,
-strokeWidth: 2,
-),
-)
-: const Icon(
-Icons.search,
-),
-
-label: Text(
-isSearching
-? "Searching..."
-: "Search Timetable",
-),
-
-style:
-ElevatedButton.styleFrom(
-backgroundColor:
-Colors.indigo,
-foregroundColor:
-Colors.white,
-shape:
-RoundedRectangleBorder(
-borderRadius:
-BorderRadius.circular(
-15),
-),
-),
-),
-),
-],
-),
-),
-),
-
-const SizedBox(height: 25),
 // Upload Card
 //----------------------------------
 
   glassCard(
+    isDark: isDark,
 
     child: Padding(
 
@@ -798,14 +653,12 @@ const SizedBox(height: 25),
 
         children: [
 
-          const Text(
-
+          Text(
             "Upload Timetable",
-
             style: TextStyle(
               fontSize: 22,
-              fontWeight:
-              FontWeight.bold,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black,
             ),
           ),
 
@@ -816,7 +669,16 @@ const SizedBox(height: 25),
             value: selectedYear,
 
             decoration:
-            const InputDecoration(
+            InputDecoration(
+              filled: true,
+              fillColor: isDark
+                  ? const Color(0xFF16263D)
+                  : Colors.white,
+              labelStyle: TextStyle(
+                color: isDark
+                    ? Colors.white70
+                    : Colors.black87,
+              ),
               labelText: "Year",
               border:
               OutlineInputBorder(),
@@ -839,6 +701,8 @@ const SizedBox(height: 25),
                 currentTimetable = null;
                 currentDocId = null;
               });
+
+              searchTimetable();
             },
           ),
 
@@ -850,7 +714,16 @@ const SizedBox(height: 25),
             selectedDepartment,
 
             decoration:
-            const InputDecoration(
+            InputDecoration(
+              filled: true,
+              fillColor: isDark
+                  ? const Color(0xFF16263D)
+                  : Colors.white,
+              labelStyle: TextStyle(
+                color: isDark
+                    ? Colors.white70
+                    : Colors.black87,
+              ),
               labelText:
               "Department",
               border:
@@ -874,6 +747,7 @@ const SizedBox(height: 25),
                 currentTimetable = null;
                 currentDocId = null;
               });
+              searchTimetable();
             },
           ),
 
@@ -885,7 +759,16 @@ const SizedBox(height: 25),
             selectedSection,
 
             decoration:
-            const InputDecoration(
+            InputDecoration(
+              filled: true,
+              fillColor: isDark
+                  ? const Color(0xFF16263D)
+                  : Colors.white,
+              labelStyle: TextStyle(
+                color: isDark
+                    ? Colors.white70
+                    : Colors.black87,
+              ),
               labelText:
               "Section",
               border:
@@ -909,6 +792,7 @@ const SizedBox(height: 25),
                 currentTimetable = null;
                 currentDocId = null;
               });
+              searchTimetable();
             },
           ),
 
@@ -1001,8 +885,7 @@ const SizedBox(height: 25),
               style:
               ElevatedButton.styleFrom(
 
-                backgroundColor:
-                Colors.teal,
+                  backgroundColor: const Color(0xFF1565C0),
 
                 foregroundColor:
                 Colors.white,
@@ -1029,6 +912,7 @@ const SizedBox(height: 25),
 if (currentTimetable != null)
 
 glassCard(
+  isDark: isDark,
 
 child: Padding(
 
@@ -1064,39 +948,45 @@ CrossAxisAlignment
 
 children: [
 
-Text(
-
-currentTimetable![
-"title"] ??
-"Timetable",
-
-style:
-const TextStyle(
-fontSize: 20,
-fontWeight:
-FontWeight
-.bold,
-),
-),
+  Text(
+    currentTimetable!["title"] ?? "Timetable",
+    style: TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: isDark ? Colors.white : Colors.black,
+    ),
+  ),
 
 const SizedBox(
 height: 6),
 
-Text(
-"Teacher : ${currentTimetable!["teacher"]}",
-),
+  Text(
+    "Teacher : ${currentTimetable!["teacher"]}",
+    style: TextStyle(
+      color: isDark ? Colors.white70 : Colors.black87,
+    ),
+  ),
 
-Text(
-"Year : ${currentTimetable!["year"]}",
-),
+  Text(
+    "Year : ${currentTimetable!["year"]}",
+    style: TextStyle(
+      color: isDark ? Colors.white70 : Colors.black87,
+    ),
+  ),
 
-Text(
-"Department : ${currentTimetable!["department"]}",
-),
+  Text(
+    "Department : ${currentTimetable!["department"]}",
+    style: TextStyle(
+      color: isDark ? Colors.white70 : Colors.black87,
+    ),
+  ),
 
-Text(
-"Section : ${currentTimetable!["section"]}",
-),
+  Text(
+    "Section : ${currentTimetable!["section"]}",
+    style: TextStyle(
+      color: isDark ? Colors.white70 : Colors.black87,
+    ),
+  ),
 ],
 ),
 ),
@@ -1113,13 +1003,12 @@ currentTimetable![
 "uploadedAt"];
 
 return Text(
-
-uploaded
-is Timestamp
-
-? "Uploaded : ${uploaded.toDate().toLocal().toString().substring(0,16)}"
-
-: "Uploaded : Just Now",
+  uploaded is Timestamp
+      ? "Uploaded : ${uploaded.toDate().toLocal().toString().substring(0,16)}"
+      : "Uploaded : Just Now",
+  style: TextStyle(
+    color: isDark ? Colors.white70 : Colors.black87,
+  ),
 );
 },
 ),
@@ -1158,8 +1047,7 @@ style:
 ElevatedButton
 .styleFrom(
 
-backgroundColor:
-Colors.green,
+  backgroundColor: const Color(0xFF1976D2),
 
 foregroundColor:
 Colors.white,
@@ -1252,35 +1140,41 @@ const SizedBox(height: 30),
 
   Widget glassCard({
     required Widget child,
+    required bool isDark,
   }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: BorderRadius.circular(18),
 
       child: BackdropFilter(
         filter: ImageFilter.blur(
-          sigmaX: 20,
-          sigmaY: 20,
+          sigmaX: 8,
+          sigmaY: 8,
         ),
 
         child: Container(
           width: double.infinity,
 
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.55),
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.white.withOpacity(0.88),
 
             borderRadius:
             BorderRadius.circular(24),
 
             border: Border.all(
-              color: Colors.white,
-              width: 1.2,
+              color: isDark
+                  ? Colors.white24
+                  : Colors.grey.shade300,
             ),
 
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+                color: isDark
+                    ? Colors.black.withOpacity(0.30)
+                    : Colors.black.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),

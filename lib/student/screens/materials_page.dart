@@ -635,6 +635,10 @@ class _MaterialsPageState extends State<MaterialsPage> {
                       return;
                     }
 
+                    if (fileUrl.trim().isEmpty) {
+                      return;
+                    }
+
                     final uri = Uri.parse(fileUrl);
 
                     final success = await launchUrl(
