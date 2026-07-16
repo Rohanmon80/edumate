@@ -11,33 +11,32 @@ class TeacherMarksPage extends StatefulWidget {
       _TeacherMarksPageState();
 }
 
-class _TeacherMarksPageState
-    extends State<TeacherMarksPage>{
+class _TeacherMarksPageState extends State<TeacherMarksPage> {
 
-  String year="1st";
+  String year = "1st";
 
-  String department="CSE";
+  String department = "CSE";
 
-  String section="A";
+  String section = "A";
 
-  String semester="1";
+  String semester = "1";
 
-  String exam="Mid 1";
+  String exam = "Mid 1";
 
-  String subject="";
+  String subject = "";
 
-  bool loading=false;
+  bool loading = false;
 
-  List<DocumentSnapshot> students=[];
+  List<DocumentSnapshot> students = [];
 
-  final subjectController=
+  final subjectController =
   TextEditingController();
 
   Map<String,
       TextEditingController>
-  marksControllers={};
+  marksControllers = {};
 
-  final exams=[
+  final exams = [
 
     "Mid 1",
     "Mid 2",
@@ -49,14 +48,12 @@ class _TeacherMarksPageState
   ];
 
   Future<void>
-  searchStudents() async{
-
+  searchStudents() async {
     setState(() {
-
-      loading=true;
+      loading = true;
     });
 
-    final data=
+    final data =
 
     await FirebaseFirestore
         .instance
@@ -99,26 +96,25 @@ class _TeacherMarksPageState
         .get();
 
     setState(() {
-
-      students=
+      students =
           data.docs;
 
-      loading=false;
+      loading = false;
     });
   }
 
   @override
-  Widget build(
-      BuildContext context){
+  Widget build(BuildContext context) {
+    final isDark =
 
-    final isDark=
-
-        Theme.of(context)
-            .brightness==
+        Theme
+            .of(context)
+            .brightness ==
 
             Brightness.dark;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
 
       backgroundColor:
 
@@ -132,12 +128,12 @@ class _TeacherMarksPageState
         0xFFF4F8FC,
       ),
 
-      appBar:AppBar(
+      appBar: AppBar(
 
         backgroundColor:
         Colors.transparent,
 
-        elevation:0,
+        elevation: 0,
 
         title:
         const Text(
@@ -159,343 +155,278 @@ class _TeacherMarksPageState
 
           children:[
 
-            glass(
+          glass(
 
-              isDark,
+          isDark,
 
-              Wrap(
+          Wrap(
 
-                spacing:12,
+            spacing: 12,
 
-                runSpacing:12,
+            runSpacing: 12,
 
-                children:[
+            children: [
 
-                  drop(
-                      year,
-                      [
-                        "1st","2nd","3rd","4th"
-                      ],
+              drop(
+                  year,
+                  [
+                    "1st", "2nd", "3rd", "4th"
+                  ],
 
-                          (v){
-
-                        setState(() {
-
-                          year=v!;
-                        });
-                      }
-                  ),
-
-                  drop(
-                      department,
-
-                      [
-
-                        "CSE",
-                        "CSM",
-                        "AIML",
-                        "ECE",
-                        "EEE"
-                      ],
-
-                          (v){
-
-                        setState(() {
-
-                          department=v!;
-                        });
-                      }
-                  ),
-
-                  drop(
-                      section,
-
-                      [
-
-                        "A",
-                        "B",
-                        "C",
-                        "D"
-                      ],
-
-                          (v){
-
-                        setState(() {
-
-                          section=v!;
-                        });
-                      }
-                  ),
-
-                  drop(
-                      semester,
-
-                      [
-
-                        "1","2","3","4",
-                        "5","6","7","8"
-                      ],
-
-                          (v){
-
-                        setState(() {
-
-                          semester=v!;
-                        });
-                      }
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(
-              height:15,
-            ),
-
-            glass(
-
-              isDark,
-
-              TextField(
-
-                controller:
-                subjectController,
-
-                decoration:
-                const InputDecoration(
-
-                  hintText:
-                  "Subject",
-
-                  prefixIcon:
-                  Icon(
-                    Icons.book,
-                  ),
-
-                  border:
-                  InputBorder.none,
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height:15,
-            ),
-
-            DropdownButtonFormField(
-
-              value:exam,
-
-              items:
-
-              exams.map(
-
-                    (e)=>
-
-                    DropdownMenuItem(
-
-                      value:e,
-
-                      child:
-                      Text(e),
-                    ),
-              ).toList(),
-
-              onChanged: (v) {
-                setState(() {
-                  exam = v!;
-                });
-              },
-            ),
-
-            const SizedBox(
-              height:15,
-            ),
-
-            SizedBox(
-
-              width:
-              double.infinity,
-
-              child:
-
-              ElevatedButton.icon(
-
-                icon:
-                const Icon(
-                  Icons.search,
-                ),
-
-                label:
-                const Text(
-                  "Search Students",
-                ),
-
-                onPressed: () {
-
-                  if (subjectController.text.trim().isEmpty) {
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-
-                      const SnackBar(
-
-                        content: Text("Please enter subject"),
-
-                      ),
-                    );
-
-                    return;
+                      (v) {
+                    setState(() {
+                      year = v!;
+                    });
                   }
-
-                  searchStudents();
-                },
               ),
+
+              drop(
+                  department,
+
+                  [
+
+                    "CSE",
+                    "CSM",
+                    "AIML",
+                    "ECE",
+                    "EEE"
+                  ],
+
+                      (v) {
+                    setState(() {
+                      department = v!;
+                    });
+                  }
+              ),
+
+              drop(
+                  section,
+
+                  [
+
+                    "A",
+                    "B",
+                    "C",
+                    "D"
+                  ],
+
+                      (v) {
+                    setState(() {
+                      section = v!;
+                    });
+                  }
+              ),
+
+              drop(
+                  semester,
+
+                  [
+
+                    "1", "2", "3", "4",
+                    "5", "6", "7", "8"
+                  ],
+
+                      (v) {
+                    setState(() {
+                      semester = v!;
+                    });
+                  }
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(
+          height: 15,
+        ),
+
+        glass(
+
+          isDark,
+
+          TextField(
+
+            controller:
+            subjectController,
+
+            decoration:
+            const InputDecoration(
+
+              hintText:
+              "Subject",
+
+              prefixIcon:
+              Icon(
+                Icons.book,
+              ),
+
+              border:
+              InputBorder.none,
+            ),
+          ),
+        ),
+
+        const SizedBox(
+          height: 15,
+        ),
+
+        DropdownButtonFormField(
+
+          value: exam,
+
+          items:
+
+          exams.map(
+
+                (e) =>
+
+                DropdownMenuItem(
+
+                  value: e,
+
+                  child:
+                  Text(e),
+                ),
+          ).toList(),
+
+          onChanged: (v) {
+            setState(() {
+              exam = v!;
+            });
+          },
+        ),
+
+        const SizedBox(
+          height: 15,
+        ),
+
+        SizedBox(
+
+          width:
+          double.infinity,
+
+          child:
+
+          ElevatedButton.icon(
+
+            icon:
+            const Icon(
+              Icons.search,
             ),
 
-            const SizedBox(
-              height:20,
+            label:
+            const Text(
+              "Search Students",
             ),
+
+            onPressed: () {
+              if (subjectController.text
+                  .trim()
+                  .isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+
+                  const SnackBar(
+
+                    content: Text("Please enter subject"),
+
+                  ),
+                );
+
+                return;
+              }
+
+              searchStudents();
+            },
+          ),
+        ),
+
+        const SizedBox(
+          height: 20,
+        ),
 
             Expanded(
-
-              child:
-
-              loading
-
-                  ?
-
-              const Center(
-                child:
-                CircularProgressIndicator(),
+              child: loading
+                  ? const Center(
+                child: CircularProgressIndicator(),
               )
-
-                  :
-
-              students.isEmpty
-
-                  ?
-
-              const Center(
-
-                child:
-                Text(
-                  "No Students Found",
-                ),
+                  : students.isEmpty
+                  ? const Center(
+                child: Text("No Students Found"),
               )
+                  : ListView.builder(
+                itemCount: students.length,
+                itemBuilder: (context, index) {
+                  final student =
+                  students[index].data() as Map<String, dynamic>;
 
-                  :
-
-              ListView.builder(
-
-                itemCount:
-                students.length,
-
-                itemBuilder:
-                    (
-                    c,
-                    i
-                    ){
-
-                  final student=
-
-                  students[i]
-                      .data()
-
-                  as Map<
-                      String,
-                      dynamic>;
-
-                  final uid=
-                      students[i].id;
+                  final uid = students[index].id;
 
                   marksControllers.putIfAbsent(
-
                     uid,
-
-                        ()=>TextEditingController(),
+                        () => TextEditingController(),
                   );
 
                   return studentCard(
-
                     student,
-
                     uid,
-
                     isDark,
                   );
                 },
               ),
             ),
-          ],
-        ),
-      ),
 
-      floatingActionButton:
+          ], // closes children
+        ), // closes Column
+      ), // closes Padding
 
-      FloatingActionButton.extended(
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80),
+        child: FloatingActionButton.extended(
+          backgroundColor: const Color(0xFF1976D2),
+          icon: const Icon(Icons.save),
+          label: Text("Save $exam"),
+          onPressed: () async {
+            for (var e in marksControllers.entries) {
+              if (e.value.text
+                  .trim()
+                  .isEmpty) continue;
 
-        onPressed:
-            () async{
-
-          for(
-
-          var e
-
-          in marksControllers
-              .entries
-
-          ){
-            if (e.value.text.trim().isEmpty) {
-              continue;
+              await FirebaseFirestore.instance
+                  .collection("student_marks")
+                  .doc("${e.key}_${subjectController.text.trim()}")
+                  .set({
+                "studentId": e.key,
+                "year": year,
+                "department": department,
+                "section": section,
+                "semester": int.parse(semester),
+                "subject": subjectController.text.trim(),
+                exam: e.value.text.trim(),
+              }, SetOptions(merge: true));
             }
 
-            await FirebaseFirestore.instance
-                .collection("student_marks")
-                .doc("${e.key}_${subjectController.text.trim()}")
-                .set({
+            if (!mounted) return;
 
-              "year": year,
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Colors.green,
+                content: Text("Marks Uploaded Successfully"),
+              ),
+            );
 
-              "department": department,
+            for (final controller in marksControllers.values) {
+              controller.clear();
+            }
 
-              "section": section,
-
-              "semester": int.parse(semester),
-
-              "subject": subjectController.text.trim(),
-
-              exam: e.value.text.trim(),
-
-            }, SetOptions(
-              merge: true,
-            ));
-          }
-          if (!mounted) return;
-
-          ScaffoldMessenger.of(context).showSnackBar(
-
-            const SnackBar(
-              backgroundColor: Colors.green,
-              content: Text("Marks Uploaded Successfully"),
-            ),
-          );
-          for (final controller in marksControllers.values) {
-            controller.clear();
-          }
-
-          subjectController.clear();
-        },
-
-        label:
-        Text(
-          "Save $exam",
+            subjectController.clear();
+          },
         ),
       ),
     );
   }
+
   @override
   void dispose() {
-
     subjectController.dispose();
 
     for (final controller in marksControllers.values) {
@@ -505,10 +436,8 @@ class _TeacherMarksPageState
     super.dispose();
   }
 
-  Widget glass(
-      bool dark,
-      Widget child){
-
+  Widget glass(bool dark,
+      Widget child) {
     return ClipRRect(
 
       borderRadius:
@@ -522,9 +451,9 @@ class _TeacherMarksPageState
         filter:
         ImageFilter.blur(
 
-          sigmaX:20,
+          sigmaX: 20,
 
-          sigmaY:20,
+          sigmaY: 20,
         ),
 
         child:
@@ -564,11 +493,9 @@ class _TeacherMarksPageState
     );
   }
 
-  Widget studentCard(
-      Map s,
+  Widget studentCard(Map s,
       String uid,
-      bool dark){
-
+      bool dark) {
     return glass(
 
       dark,
@@ -594,14 +521,14 @@ class _TeacherMarksPageState
         Text(
 
           s["rollNumber"]
-              ??"",
+              ?? "",
         ),
 
         trailing:
 
         SizedBox(
 
-          width:90,
+          width: 90,
 
           child:
           TextField(
@@ -619,34 +546,32 @@ class _TeacherMarksPageState
     );
   }
 
-  Widget drop(
-      String value,
+  Widget drop(String value,
 
       List<String> items,
 
       Function(String?)
-      f){
-
+      f) {
     return DropdownButton(
 
-      value:value,
+      value: value,
 
       items:
 
       items.map(
 
-            (e)=>
+            (e) =>
 
             DropdownMenuItem(
 
-              value:e,
+              value: e,
 
               child:
               Text(e),
             ),
       ).toList(),
 
-      onChanged:f,
+      onChanged: f,
     );
   }
 }

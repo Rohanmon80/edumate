@@ -51,25 +51,15 @@ class ResultsPage extends StatelessWidget {
       body:
 
       StreamBuilder<
-          DocumentSnapshot>(
+          QuerySnapshot>(
 
-        stream:
-
-        FirebaseFirestore
-            .instance
-
-            .collection(
-          "student_marks",
+        stream: FirebaseFirestore.instance
+            .collection("student_marks")
+            .where(
+          "studentId",
+          isEqualTo: FirebaseAuth.instance.currentUser!.uid,
         )
-
-            .doc(
-
-          FirebaseAuth
-              .instance
-              .currentUser!
-              .uid,
-        )
-
+            .limit(1)
             .snapshots(),
 
         builder:
@@ -89,11 +79,7 @@ class ResultsPage extends StatelessWidget {
             );
           }
 
-          if(
-          !snapshot
-              .data!
-              .exists
-          ){
+          if (snapshot.data!.docs.isEmpty){
 
             return const Center(
 
@@ -108,7 +94,7 @@ class ResultsPage extends StatelessWidget {
 
           snapshot
               .data!
-              .data()
+              .docs.first.data()
 
           as Map<
               String,
