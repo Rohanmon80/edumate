@@ -362,6 +362,7 @@ class TeacherDashboardPage extends StatelessWidget {
                           .collection(
                         "users",
                       )
+                          .where("role", isEqualTo: "student")
 
                           .snapshots(),
 

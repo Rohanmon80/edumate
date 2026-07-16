@@ -187,6 +187,12 @@ class NoticesPage extends StatelessWidget {
                   as Map<
                       String,
                       dynamic>;
+                      print(student);
+
+                      print("Year = ${student["year"]}");
+                      print("Department = ${student["department"]}");
+                      print("Semester = ${student["semester"]}");
+                      print("Section = ${student["section"]}");
 
                   return StreamBuilder<QuerySnapshot>(
 
@@ -257,6 +263,7 @@ class NoticesPage extends StatelessWidget {
                         context,
                         snapshot,
                         ){
+                          print("Notices found: ${snapshot.data?.docs.length}");
 
                           if(
                           snapshot.connectionState

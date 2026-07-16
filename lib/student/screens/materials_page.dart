@@ -40,15 +40,8 @@ class _MaterialsPageState extends State<MaterialsPage> {
 
         elevation: 0,
 
-        leading: IconButton(
-
-          icon: const Icon(Icons.arrow_back),
-
-          onPressed: () {
-
-            Navigator.pop(context);
-          },
-        ),
+        leading: null,
+        automaticallyImplyLeading: false,
       ),
 
       backgroundColor:
@@ -281,6 +274,14 @@ class _MaterialsPageState extends State<MaterialsPage> {
 
                     builder:
                         (context,snapshot){
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: Text(
+                                snapshot.error.toString(),
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            );
+                          }
 
                       if(
                       !snapshot.hasData

@@ -14,7 +14,7 @@ class TeacherMarksPage extends StatefulWidget {
 class _TeacherMarksPageState
     extends State<TeacherMarksPage>{
 
-  String year="1";
+  String year="1st";
 
   String department="CSE";
 
@@ -174,7 +174,7 @@ class _TeacherMarksPageState
                   drop(
                       year,
                       [
-                        "1","2","3","4"
+                        "1st","2nd","3rd","4th"
                       ],
 
                           (v){
@@ -301,9 +301,10 @@ class _TeacherMarksPageState
                     ),
               ).toList(),
 
-              onChanged:(v){
-
-                exam=v!;
+              onChanged: (v) {
+                setState(() {
+                  exam = v!;
+                });
               },
             ),
 
@@ -330,8 +331,24 @@ class _TeacherMarksPageState
                   "Search Students",
                 ),
 
-                onPressed:
-                searchStudents,
+                onPressed: () {
+
+                  if (subjectController.text.trim().isEmpty) {
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+
+                      const SnackBar(
+
+                        content: Text("Please enter subject"),
+
+                      ),
+                    );
+
+                    return;
+                  }
+
+                  searchStudents();
+                },
               ),
             ),
 
@@ -428,51 +445,45 @@ class _TeacherMarksPageState
               .entries
 
           ){
+            if (e.value.text.trim().isEmpty) {
+              continue;
+            }
 
-            await FirebaseFirestore
-                .instance
-
-                .collection(
-              "student_marks",
-            )
-
-                .doc(
-              e.key,
-            )
-
+            await FirebaseFirestore.instance
+                .collection("student_marks")
+                .doc("${e.key}_${subjectController.text.trim()}")
                 .set({
 
-              "year":
-              year,
+              "year": year,
 
-              "department":
-              department,
+              "department": department,
 
-              "section":
-              section,
+              "section": section,
 
-              "semester":
+              "semester": int.parse(semester),
 
-              int.parse(
-                semester,
-              ),
+              "subject": subjectController.text.trim(),
 
-              "subject":
+              exam: e.value.text.trim(),
 
-              subjectController
-                  .text,
-
-              exam:
-
-              e.value.text,
-
-            },
-
-              SetOptions(
-                merge:true,
-              ),
-            );
+            }, SetOptions(
+              merge: true,
+            ));
           }
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+
+            const SnackBar(
+              backgroundColor: Colors.green,
+              content: Text("Marks Uploaded Successfully"),
+            ),
+          );
+          for (final controller in marksControllers.values) {
+            controller.clear();
+          }
+
+          subjectController.clear();
         },
 
         label:
@@ -481,6 +492,17 @@ class _TeacherMarksPageState
         ),
       ),
     );
+  }
+  @override
+  void dispose() {
+
+    subjectController.dispose();
+
+    for (final controller in marksControllers.values) {
+      controller.dispose();
+    }
+
+    super.dispose();
   }
 
   Widget glass(

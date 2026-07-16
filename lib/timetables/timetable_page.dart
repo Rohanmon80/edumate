@@ -117,6 +117,10 @@ data["department"] ?? "";
 
 section =
 data["section"] ?? "";
+debugPrint("Student Year: $year");
+debugPrint("Student Department: $department");
+debugPrint("Student Section: $section");
+debugPrint("Searching ID: ${year}_${department}_${section}");
 
 await loadTimetable();
 
@@ -251,12 +255,17 @@ error: true,
 // Build
 //------------------------------------
 
-@override
-Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
 
-return Scaffold(
+    final bool isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
-backgroundColor: const Color(0xffF4F8FC),
+    return Scaffold(
+
+      backgroundColor: isDark
+          ? const Color(0xFF081120)
+          : const Color(0xFFF6F8FC),
 
 appBar: AppBar(
 
@@ -264,7 +273,9 @@ elevation: 0,
 
 centerTitle: true,
 
-backgroundColor: Colors.teal,
+  backgroundColor: isDark
+  ? const Color(0xFF0D47A1)
+      : const Color(0xFF1565C0),
 
 foregroundColor: Colors.white,
 
@@ -303,6 +314,7 @@ children: [
 //----------------------------------
 
 glassCard(
+  isDark: isDark,
 
 child: Padding(
 
@@ -317,8 +329,7 @@ const CircleAvatar(
 
 radius: 35,
 
-backgroundColor:
-Colors.teal,
+  backgroundColor: const Color(0xFF1565C0),
 
 child: Icon(
 Icons.person,
@@ -382,6 +393,7 @@ const SizedBox(height: 25),
 if (timetable == null)
 
 glassCard(
+  isDark: isDark,
 
 child: Padding(
 
@@ -437,6 +449,7 @@ TextAlign.center,
 if (timetable != null)
 
 glassCard(
+  isDark: isDark,
 
 child: Padding(
 
@@ -558,8 +571,7 @@ const SizedBox(height: 20),
           style:
           ElevatedButton.styleFrom(
 
-            backgroundColor:
-            Colors.green,
+          backgroundColor: const Color(0xFF1976D2),
 
             foregroundColor:
             Colors.white,
@@ -599,8 +611,7 @@ const SizedBox(height: 20),
           style:
           ElevatedButton.styleFrom(
 
-            backgroundColor:
-            Colors.teal,
+          backgroundColor: const Color(0xFF1565C0),
 
             foregroundColor:
             Colors.white,
@@ -633,6 +644,7 @@ const SizedBox(height: 20),
 
   Widget glassCard({
     required Widget child,
+    required bool isDark,
   }) {
 
     return ClipRRect(
@@ -653,15 +665,17 @@ const SizedBox(height: 20),
 
           decoration: BoxDecoration(
 
-            color:
-            Colors.white.withOpacity(0.55),
+            color: isDark
+                ? Colors.white.withOpacity(0.08)
+                : Colors.white.withOpacity(0.88),
 
             borderRadius:
             BorderRadius.circular(24),
 
             border: Border.all(
-              color: Colors.white,
-              width: 1.2,
+              color: isDark
+                  ? Colors.white24
+                  : Colors.grey.shade300,
             ),
 
             boxShadow: [
@@ -671,7 +685,7 @@ const SizedBox(height: 20),
                 color: Colors.black
                     .withOpacity(0.08),
 
-                blurRadius: 18,
+                blurRadius: 10,
 
                 offset:
                 const Offset(0, 10),

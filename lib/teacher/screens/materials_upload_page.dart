@@ -371,6 +371,8 @@ Future<void> uploadMaterial() async {
         .last}";
 
     final bytes = await selectedFile!.readAsBytes();
+    debugPrint("Firebase User: ${auth.currentUser?.uid}");
+    debugPrint("Supabase User: ${supabase.auth.currentUser?.id}");
 
     await supabase.storage
         .from("study-materials")

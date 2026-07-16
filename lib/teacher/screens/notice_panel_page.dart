@@ -27,7 +27,7 @@ class _TeacherNoticePageState
   TextEditingController();
 
   String selectedYear =
-      "1";
+      "1st";
 
   String selectedDepartment =
       "CSE";
@@ -110,10 +110,10 @@ class _TeacherNoticePageState
 
               items:[
 
-                "1",
-                "2",
-                "3",
-                "4"
+                "1st",
+                "2nd",
+                "3rd",
+                "4th"
 
               ]
 
@@ -327,11 +327,7 @@ class _TeacherNoticePageState
 
                     descriptionController.text,
 
-                    "year":
-
-                    int.parse(
-                      selectedYear,
-                    ),
+                    "year": selectedYear,
 
                     "department":
 

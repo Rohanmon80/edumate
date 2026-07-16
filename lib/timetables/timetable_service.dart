@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -106,55 +106,57 @@ LaunchMode.externalApplication,
 // Get Teacher / Admin Details
 //---------------------------------------------
 
-Future<Map<String, dynamic>> getUserDetails({
-bool isAdmin = false,
-}) async {
-final user = currentUser;
+  Future<Map<String, dynamic>> getUserDetails({
+    bool isAdmin = false,
+  }) async {
 
-if (user == null) {
-throw Exception("User not logged in");
-}
+    final user = currentUser;
 
-final collection =
-isAdmin ? "admins" : "teachers";
+    if (user == null) {
+      throw Exception("User not logged in");
+    }
 
-final query = await firestore
-.collection(collection)
-.where(
-"email",
-isEqualTo: user.email,
-)
-.limit(1)
-.get();
+    final collection =
+    isAdmin ? "admins" : "teachers";
 
-if (query.docs.isEmpty) {
-throw Exception(
-isAdmin
-? "Admin profile not found"
-: "Teacher profile not found",
-);
-}
+    final query = await firestore
+        .collection(collection)
+        .where(
+      "email",
+      isEqualTo: user.email,
+    )
+        .limit(1)
+        .get();
 
-final data = query.docs.first.data();
+    if (query.docs.isEmpty) {
+      throw Exception(
+        isAdmin
+            ? "Admin profile not found"
+            : "Teacher profile not found",
+      );
+    }
 
-return {
-"name": data["name"] ??
-(isAdmin ? "Admin" : "Teacher"),
+    final data = query.docs.first.data();
 
-"id": user.uid,
+    return {
+      "name": data["name"] ??
+          (isAdmin ? "Admin" : "Teacher"),
 
-"department": isAdmin
-? "Administrator"
-: (data["department"] ?? ""),
+      "id": user.uid,
 
-"email": data["email"] ?? "",
+      "department": isAdmin
+          ? "Administrator"
+          : (data["department"] ?? ""),
 
-"phone": data["phone"] ?? "",
+      "email": data["email"] ?? "",
 
-"role":
-isAdmin ? "Admin" : "Teacher",
-};
-}
+      "phone": data["phone"] ?? "",
+
+      "role": isAdmin
+          ? "Admin"
+          : "Teacher",
+    };
+  }
 
 //---------------------------------------------
 // Check Existing Timetable
@@ -182,24 +184,32 @@ section: section,
 // Get Timetable
 //---------------------------------------------
 
-Future<Map<String, dynamic>?> getTimetable({
-required String year,
-required String department,
-required String section,
-}) async {
-final doc =
-await getExistingTimetable(
-year: year,
-department: department,
-section: section,
-);
+  Future<Map<String, dynamic>?> getTimetable({
+    required String year,
+    required String department,
+    required String section,
+  }) async {
 
-if (!doc.exists) {
-return null;
-}
+    final id =
+        "${year}_${department}_${section}";
 
-return doc.data();
-}
+    debugPrint("Searching timetable: $id");
+
+    final doc = await firestore
+        .collection("timetables")
+        .doc(id)
+        .get();
+
+    debugPrint("Exists: ${doc.exists}");
+
+    if (!doc.exists) {
+      return null;
+    }
+
+    debugPrint(doc.data().toString());
+
+    return doc.data();
+  }
 
 //---------------------------------------------
 // Timetable Exists?

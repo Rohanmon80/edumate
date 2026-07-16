@@ -417,7 +417,7 @@ class _StudentMainNavigationState
                   navItem(
                     2,
                     Icons.menu_book,
-                    "Exam",
+                    "Material",
                   ),
 
                   navItem(
