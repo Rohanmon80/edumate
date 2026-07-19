@@ -111,32 +111,5 @@ android {
         jvmTarget = "17"
     }
 }
-afterEvaluate {
 
-    tasks.named(
-        "assembleDebug"
-    ) {
-
-        finalizedBy(
-            "copyDebugApk"
-        )
-    }
-
-    tasks.register<Copy>(
-        "copyDebugApk"
-    ) {
-
-        from(
-            layout.buildDirectory.file(
-                "outputs/apk/debug/app-debug.apk"
-            )
-        )
-
-        into(
-            rootProject.rootDir.resolve(
-                "../build/app/outputs/flutter-apk"
-            )
-        )
-    }
-}
 
